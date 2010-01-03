@@ -9,6 +9,12 @@ var firefoxSessions = {
     this._notify(this.EVENT_ADD,id);
     return id;
   },
+  hasOnlyOneSession : function () {
+    return this._list.length == 1;
+  },
+  getFirstSession : function () {
+    return this._list[0];
+  },
   removeSession : function(id) {
     this._list.remove(id);
     this._notify(this.EVENT_REMOVE,id);

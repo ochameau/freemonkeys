@@ -10,7 +10,7 @@ box.action box[anonid="action"] {
   -moz-box-flex: 1;
 }
 menulist {
-  moz-appearance: none;
+  -moz-appearance: none;
   max-width: 400px;
 }
 
@@ -36,6 +36,7 @@ box.frame-selection {
   -moz-box-align: center;
   -moz-box-flex: 1;
 }
+
 box.frame-selection image[anonid="preview"] {
   max-height: 100px;
   margin: 5px;

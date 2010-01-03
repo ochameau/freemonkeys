@@ -31,6 +31,9 @@
   if (!this.type.match(/firefox-session/)) {
     this.sessions.parentNode.style.display="";
     firefoxSessions.addObserver(this);
+    if (firefoxSessions.hasOnlyOneSession()) {
+      this.selectSession(firefoxSessions.getFirstSession());
+    }
   } else {
     this.sessionId = firefoxSessions.getNextId();
     this.action.setAttribute("session-id",sessionId);
@@ -142,6 +145,21 @@
 ]]></body>
 </method>
 
+<method name="selectSession">
+<parameter name="id" />
+<body><![CDATA[
+  this.action.setAttribute("session-id",id);
+  for(var i=0; i<this.sessions.childNodes.length; i++) {
+    var item=this.sessions.childNodes[i];
+    if (item.sessionId==id) {
+      this.sessions.parentNode.selectedItem=item;
+      break;
+    }
+  }
+  
+  this.sessions.parentNode.style.backgroundColor=firefoxSessions.getColorFor(id);
+]]></body>
+</method>
 
 </implementation>
 <handlers>
@@ -163,9 +181,7 @@
 <handler event="select">
   if (event.originalTarget != this.sessions.parentNode) return;
   var id = this.sessions.parentNode.selectedItem.sessionId;
-  this.action.setAttribute("session-id",id);
-  if (this.sessions.parentNode.selectedItem)
-    this.sessions.parentNode.style.backgroundColor=firefoxSessions.getColorFor(parseInt(id));
+  this.selectSession(id);
 </handler>
 </handlers>
 </binding>

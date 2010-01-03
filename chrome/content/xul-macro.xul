@@ -30,13 +30,13 @@
     </toolbox>
     
     <hbox>
-      <button label="lancer firefox" onclick="addAction('firefox-session')" />
-      <button label="cliquer" onclick="addAction('click')" />
-      <button label="taper" onclick="addAction('keypress')" />
-      <button label="screenshoter" onclick="addAction('screenshot')" />
-      <button label="openurl" onclick="addAction('openurl')" />
+      <button label="launch firefox" onclick="addAction('firefox-session')" />
+      <button label="click" onclick="addAction('click')" />
+      <button label="keypress" onclick="addAction('keypress')" />
+      <button label="screenshot" onclick="addAction('screenshot')" />
+      <button label="open url" onclick="addAction('openurl')" />
       <button label="execute" onclick="addAction('execute')" />
-      <button label="fermer firefox" onclick="addAction('close-session')" />
+      <button label="close firefox" onclick="addAction('close-session')" />
     </hbox>
     
     <richlistbox id="command-list" flex="1" />

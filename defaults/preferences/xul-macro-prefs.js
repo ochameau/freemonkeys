@@ -9,3 +9,5 @@ pref("nglayout.debug.disable_xul_cache", true);
 pref("nglayout.debug.disable_xul_fastload", true);
 
 pref("dom.max_chrome_script_run_time", 45);
+
+pref("freemonkeys.default-application-path","C:\\Program Files\\Mozilla Firefox 3\\firefox.exe");

@@ -6,12 +6,12 @@
   <xul:label anonid="id" value="#" />
   <xul:vbox>
     <xul:hbox align="center">
-      <xul:label value="Launch firefox : " />
-      <xul:label anonid="path" value="" />
+      <xul:label value="Launch firefox : " style="width: 80px; text-align: right" />
       <xul:button anonid="select-firefox" label="change" />
+      <xul:label anonid="path" value="" />
     </xul:hbox>
     <xul:hbox align="center">
-      <xul:label value="with profile : " />
+      <xul:label value="with profile : " style="width: 80px; text-align: right" />
       <xul:menulist>
         <xul:menupopup anonid="profiles" />
       </xul:menulist>
@@ -29,7 +29,11 @@
   this.path = document.getAnonymousElementByAttribute(this, "anonid", "path");
   
   this.idLabel.value="#"+this.getAttribute("session-id");
-  this.path.value="C:\\Program Files\\Mozilla Firefox 3\\firefox.exe";
+  var prefs = Components.classes["@mozilla.org/preferences-service;1"]
+                    .getService(Components.interfaces.nsIPrefService);
+  prefs = prefs.getBranch("freemonkeys.");
+
+  this.path.value=prefs.getCharPref("default-application-path");
   this.loadProfiles();
   
   this.idLabel.style.backgroundColor = firefoxSessions.getColorFor(parseInt(this.getAttribute("session-id")));
@@ -94,6 +98,10 @@
     var rv = fp.show();
     if (rv == nsIFilePicker.returnOK) {
       var file = fp.file;
+      var prefs = Components.classes["@mozilla.org/preferences-service;1"]
+                    .getService(Components.interfaces.nsIPrefService);
+      prefs = prefs.getBranch("freemonkeys.");
+      prefs.setCharPref("default-application-path",file.path);
       this.path.value = file.path;
     }
   }
