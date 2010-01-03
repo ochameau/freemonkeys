@@ -1,0 +1,66 @@
+<?xml version="1.0"?>
+<bindings xmlns="http://www.mozilla.org/xbl">
+<binding id="execute">
+<content xmlns:xul="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+  <xul:label class="desc" value="Execute JS" />
+  <xul:vbox flex="1">
+    <xul:box class="frame-selection" />
+    <xul:textbox multiline="true" anonid="script" flex="1" />
+    <xul:vbox align="center"><xul:button anonid="result" hidden="true" /></xul:vbox>
+  </xul:vbox>
+</content>
+<implementation>
+<constructor>
+  this.frame = document.getAnonymousElementByAttribute(this, "class", "frame-selection");
+  this.script = document.getAnonymousElementByAttribute(this, "anonid", "script");
+  this.result = document.getAnonymousElementByAttribute(this, "anonid", "result");
+</constructor>
+
+<method name="restore">
+<parameter name="action" />
+<body><![CDATA[
+  this.script.value=action.script;
+  this.frame.restore(action.frame);
+]]></body>
+</method>
+
+<method name="getActionObject">
+<body><![CDATA[
+  return {
+    frame : this.frame.getActionObject(),
+    script : this.script.value
+  };
+]]></body>
+</method>
+
+<method name="executed">
+<parameter name="success" />
+<parameter name="result" />
+<body><![CDATA[
+  this.result.hidden=false;
+  if (success) {
+    this.lastResult = result.value;
+    var desc=typeof this.lastResult;
+    if (desc=="string")
+      desc+=" = "+this.lastResult;
+    else if (desc=="number")
+      desc+=" = "+this.lastResult;
+    this.result.label = "SUCCESS ("+desc+") in "+result.time+" ms";
+  } else {
+    this.lastResult = null;
+    this.result.label = "FAILED : "+result.msg;
+  }
+]]></body>
+</method>
+
+</implementation>
+
+<handlers>
+<handler event="command"><![CDATA[
+  if (event.originalTarget.getAttribute("anonid")=="result") {
+    inspect(this.lastResult);
+  }
+]]></handler>
+</handlers>
+</binding>
+</bindings>

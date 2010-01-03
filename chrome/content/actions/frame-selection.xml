@@ -1,0 +1,262 @@
+<?xml version="1.0"?>
+<bindings xmlns="http://www.mozilla.org/xbl">
+<binding id="frame-selection">
+<content xmlns:xul="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+<xul:vbox flex="1">
+  
+  <xul:hbox align="center">
+    <xul:label value="Window : " style="font-weight: bold;" />
+    <xul:vbox>
+      <xul:hbox>
+        <xul:image anonid="win-preview" />
+      </xul:hbox>
+    </xul:vbox>
+    <xul:button anonid="win-select" label="select" />
+    <xul:popup anonid="windows-list" />
+    <xul:vbox align="center">
+      <xul:label value="Type" />
+      <xul:textbox anonid="win-type" clickSelectsAll="true" size="10" />
+    </xul:vbox>
+    <xul:vbox align="center">
+      <xul:label value="Id" />
+      <xul:textbox anonid="win-id" clickSelectsAll="true" size="10" />
+    </xul:vbox>
+    <xul:menulist anonid="win-position" selectedIndex="0">
+      <xul:menupopup>
+        <xul:menuitem label="Topmost" value="topmost"/>
+        <xul:menuitem label="First" value="first" />
+        <xul:menuitem label="Last" value="last" />
+      </xul:menupopup>
+    </xul:menulist>
+  </xul:hbox>
+  
+  <xul:hbox align="center">
+    <xul:label value="Frame : " style="font-weight: bold;" />
+    <xul:vbox>
+      <xul:hbox>
+        <xul:image anonid="frame-preview" />
+      </xul:hbox>
+    </xul:vbox>
+    <xul:button anonid="frame-select" label="select" />
+    <xul:popup anonid="frames-list" />
+    <xul:vbox align="center">
+        <xul:label value="Xpath's (comma separated)" />
+        <xul:textbox anonid="frame-xpath" clickSelectsAll="true" size="25" />
+    </xul:vbox>
+  </xul:hbox>
+  
+  <xul:tooltip  id="full-preview" onpopupshowing="this.lastChild.src = document.tooltipNode.src;"><xul:image /></xul:tooltip>
+  
+</xul:vbox>
+</content>
+<implementation>
+<constructor>
+  this.framesList = document.getAnonymousElementByAttribute(this, "anonid", "frames-list");
+  this.frameSelectBtn = document.getAnonymousElementByAttribute(this, "anonid", "frame-select");
+  this.framePreview = document.getAnonymousElementByAttribute(this, "anonid", "frame-preview");
+  this.frameXPath = document.getAnonymousElementByAttribute(this, "anonid", "frame-xpath");
+  
+  this.preview = document.getAnonymousElementByAttribute(this, "anonid", "preview");
+  
+  this.windowsList = document.getAnonymousElementByAttribute(this, "anonid", "windows-list");
+  this.winSelectBtn = document.getAnonymousElementByAttribute(this, "anonid", "win-select");
+  this.winId = document.getAnonymousElementByAttribute(this, "anonid", "win-id");
+  this.winType = document.getAnonymousElementByAttribute(this, "anonid", "win-type");
+  this.winPreview = document.getAnonymousElementByAttribute(this, "anonid", "win-preview");
+  this.winPosition = document.getAnonymousElementByAttribute(this, "anonid", "win-position");
+</constructor>
+
+
+<method name="getSessionId">
+<body><![CDATA[
+  // Retrieve session id from parent nodes
+  var sessionId=-1;
+  var n=this.parentNode;
+  while(n.parentNode) {
+    if (n.getAttribute("session-id"))
+      sessionId=parseInt(n.getAttribute("session-id"));
+    n=n.parentNode;
+  }
+  return sessionId;
+]]></body>
+</method>
+
+<method name="restore">
+<parameter name="data" />
+<body><![CDATA[
+  this.winId.value=data.win.id;
+  this.winType.value=data.win.type;
+  if (data.win.position)
+  for(var i=0; i<this.winPosition.menupopup.childNodes.length; i++) {
+    if (this.winPosition.menupopup.childNodes[i].value==data.win.position) {
+      this.winPosition.selectedIndex=i;
+      break;
+    }
+  }
+  this.winPreview.src=data.win.preview.data;
+  this.winPreview.width=data.win.preview.width;
+  this.winPreview.height=data.win.preview.height;
+  
+  this.frameXPath.value=data.frame.xpath;
+  
+  this.framePreview.src=data.frame.preview.data;
+  this.framePreview.width=data.frame.preview.width;
+  this.framePreview.height=data.frame.preview.height;
+]]></body>
+</method>
+
+<method name="getActionObject">
+<body><![CDATA[
+  return {
+    win : {
+      id : this.winId.value,
+      type : this.winType.value,
+      position : this.winPosition.selectedItem?this.winPosition.selectedItem.value:null,
+      preview : {
+        data : this.winPreview.src,
+        width : this.winPreview.width,
+        height : this.winPreview.height
+      }
+    },
+    frame : {
+      xpath : this.frameXPath.value.split(/\s*,\s*/),
+      preview : {
+        data : this.framePreview.src,
+        width : this.framePreview.width,
+        height : this.framePreview.height
+      }
+    }
+  };
+]]></body>
+</method>
+
+<method name="updateWindowWithInfo">
+<parameter name="win" />
+<body><![CDATA[
+  this.winType.value=win.type;
+  this.winId.value=win.id;
+  this.winPreview.src=win.preview.image;
+  this.winPreview.width=win.preview.width;
+  this.winPreview.height=win.preview.height;
+  this.winPreview.setAttribute("style","max-width:"+win.preview.width+"px;max-height:"+win.preview.height+"px");
+]]></body>
+</method>
+
+<method name="updateFrameWithInfo">
+<parameter name="frame" />
+<body><![CDATA[
+  this.frameXPath.value=frame.position;
+  this.framePreview.src=frame.preview.image;
+  this.framePreview.width=frame.preview.width;
+  this.framePreview.height=frame.preview.height;
+  this.framePreview.setAttribute("style","max-width:"+frame.preview.width+"px;max-height:"+frame.preview.height+"px");
+]]></body>
+</method>
+
+</implementation>
+
+<handlers>
+
+<handler event="click"><![CDATA[
+  // Window
+  var target=event.originalTarget;
+  var win=target.___win;
+  if (!win && target.parentNode){
+    target=target.parentNode;
+    win=target.___win;
+  }
+  if (!win && target.parentNode){
+    target=target.parentNode;
+    win=target.___win;
+  }
+  if (win) {
+    this.updateWindowWithInfo(win);
+    this.windowsList.hidePopup();
+  }
+  // Frame
+  var target=event.originalTarget;
+  var frame=target.___frame;
+  if (!frame && target.parentNode){
+    target=target.parentNode;
+    frame=target.___frame;
+  }
+  if (!frame && target.parentNode){
+    target=target.parentNode;
+    frame=target.___frame;
+  }
+  if (frame) {
+    this.updateFrameWithInfo(frame);
+    this.framesList.hidePopup();
+  }
+]]></handler>
+
+<handler event="command"><![CDATA[
+try{
+  if (event.originalTarget==this.winSelectBtn) {
+    var list = Actions.getWindowsList(this.getSessionId());
+      
+    while(this.windowsList.firstChild)
+      this.windowsList.removeChild(this.windowsList.firstChild);
+      
+    for(var i=0;i<list.length;i++) {
+        var win=list[i];
+        if (!win) continue;
+        var item=document.createElement("hbox");
+        item.setAttribute("align","center");
+        item.___win = win;
+
+        var img=document.createElement("image");
+        img.setAttribute("src",win.preview.image);
+        img.setAttribute("style","max-width:"+win.preview.width+"px;max-height:"+win.preview.height+"px");
+        img.setAttribute("tooltip","full-preview");
+        item.appendChild(img);
+        
+        var label=document.createElement("label");
+        label.setAttribute("value","type:"+win.type+" id:"+win.id);
+        item.appendChild(label);
+        
+        this.windowsList.appendChild(item);
+    }
+   
+    this.windowsList.openPopup(this.winSelectBtn,"overlap");
+  } 
+  else if (event.originalTarget==this.frameSelectBtn) {
+    var list = Actions.getFramesList(this.getSessionId(), this.getActionObject().win);
+      
+    while(this.framesList.firstChild)
+      this.framesList.removeChild(this.framesList.firstChild);
+      
+    for(var i=0;i<list.length;i++) {
+        var frame=list[i];
+        if (!frame) continue;
+        var item=document.createElement("hbox");
+        item.setAttribute("align","center");
+        item.___frame = frame;
+      
+        item.setAttribute("label",frame.name+" "+frame.title+" "+frame.location);
+        
+        var img=document.createElement("image");
+        img.setAttribute("src",frame.preview.image);
+        img.setAttribute("style","max-width:"+frame.preview.width+"px;max-height:"+frame.preview.height+"px");
+        img.setAttribute("tooltip","full-preview");
+        item.appendChild(img);
+        
+        var label=document.createElement("label");
+        label.setAttribute("value","name:"+frame.name+" title:"+frame.title+" href:"+frame.location);
+        item.appendChild(label);
+        
+        this.framesList.appendChild(item);
+    }
+   
+    this.framesList.openPopup(this.frameSelectBtn,"overlap");
+  }
+} catch(e) {
+  alert(e);
+}
+]]></handler>
+
+
+</handlers>
+
+</binding>
+</bindings>

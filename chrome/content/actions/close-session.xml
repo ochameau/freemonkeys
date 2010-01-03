@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<bindings xmlns="http://www.mozilla.org/xbl">
+<binding id="close-session">
+<content xmlns:xul="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+  <xul:label class="desc" value="Close session!" />
+</content>
+<implementation>
+<constructor>
+  
+</constructor>
+
+<method name="restore">
+<parameter name="action" />
+<body><![CDATA[
+  
+]]></body>
+</method>
+
+<method name="getActionObject">
+<body><![CDATA[
+  return null;
+]]></body>
+</method>
+
+<method name="executed">
+<body><![CDATA[
+  delete Actions._browsers[this.getAttribute("session-id")];
+]]></body>
+</method>
+
+</implementation>
+</binding>
+</bindings>

@@ -1,0 +1,103 @@
+<?xml version="1.0"?>
+<bindings xmlns="http://www.mozilla.org/xbl">
+<binding id="firefox-session">
+<content xmlns:xul="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+<xul:hbox flex="1" align="center">
+  <xul:label anonid="id" value="#" />
+  <xul:vbox>
+    <xul:hbox align="center">
+      <xul:label value="Launch firefox : " />
+      <xul:label anonid="path" value="" />
+      <xul:button anonid="select-firefox" label="change" />
+    </xul:hbox>
+    <xul:hbox align="center">
+      <xul:label value="with profile : " />
+      <xul:menulist>
+        <xul:menupopup anonid="profiles" />
+      </xul:menulist>
+    </xul:hbox>
+  </xul:vbox>
+  <xul:spacer flex="1" />
+  <xul:image anonid="close" tooltiptext="close this firefox session" hidden="true" />
+</xul:hbox>
+</content>
+<implementation>
+<constructor>
+  this.idLabel  = document.getAnonymousElementByAttribute(this, "anonid", "id");
+  this.profiles = document.getAnonymousElementByAttribute(this, "anonid", "profiles");
+  this.close = document.getAnonymousElementByAttribute(this, "anonid", "close");
+  this.path = document.getAnonymousElementByAttribute(this, "anonid", "path");
+  
+  this.idLabel.value="#"+this.getAttribute("session-id");
+  this.path.value="C:\\Program Files\\Mozilla Firefox 3\\firefox.exe";
+  this.loadProfiles();
+  
+  this.idLabel.style.backgroundColor = firefoxSessions.getColorFor(parseInt(this.getAttribute("session-id")));
+</constructor>
+<method name="loadProfiles">
+<body><![CDATA[
+  var list=firefoxSessions.getProfileList();
+  for(var i=0;i<list.length;i++) {
+    var menuitem=document.createElement("menuitem");
+    menuitem.setAttribute("label",list[i]);
+    menuitem.profile=list[i];
+    this.profiles.appendChild(menuitem);
+  }
+]]></body>
+</method>
+
+<method name="restore">
+<parameter name="action" />
+<body><![CDATA[
+  for(var i=0;i<this.profiles.childNodes.length;i++) {
+    var item=this.profiles.childNodes[i];
+    if (item.profile==action.profile) {
+      this.profiles.parentNode.selectedItem=item;
+      break;
+    }
+  }
+]]></body>
+</method>
+
+<method name="getActionObject">
+<body><![CDATA[
+  var binaryPath=this.path.value;
+  var profile=this.profiles.parentNode.selectedItem.profile;
+  var port=24242;
+  return {
+    binary : binaryPath,
+    profile : profile,
+    port : port
+  };
+]]></body>
+</method>
+
+<method name="executed">
+<parameter name="success" />
+<parameter name="result" />
+<body><![CDATA[
+  this.close.hidden=false;
+]]></body>
+</method>
+
+</implementation>
+<handlers>
+<handler event="click"><![CDATA[
+  if (event.originalTarget.getAttribute("anonid")=="close") {
+    Actions.closeSession(this.getAttribute("session-id"));
+  } else if (event.originalTarget.getAttribute("anonid")=="select-firefox") {
+    var fp = Components.classes["@mozilla.org/filepicker;1"].createInstance(nsIFilePicker);
+    fp.init(window, "Firefox binary", nsIFilePicker.modeOpen);
+    fp.appendFilter("Firefox binary","*.exe");
+    fp.appendFilters(nsIFilePicker.filterAll);
+    
+    var rv = fp.show();
+    if (rv == nsIFilePicker.returnOK) {
+      var file = fp.file;
+      this.path.value = file.path;
+    }
+  }
+]]></handler>
+</handlers>
+</binding>
+</bindings>

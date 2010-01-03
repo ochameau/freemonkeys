@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<bindings xmlns="http://www.mozilla.org/xbl">
+<binding id="openurl">
+<content xmlns:xul="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+  <xul:label class="desc" value="Open url" />
+  <xul:textbox anonid="url" flex="1" />
+</content>
+<implementation>
+<constructor>
+  this.url = document.getAnonymousElementByAttribute(this, "anonid", "url");
+</constructor>
+
+<method name="restore">
+<parameter name="url" />
+<body><![CDATA[
+  this.url.value = url;
+]]></body>
+</method>
+
+<method name="getActionObject">
+<body><![CDATA[
+  return this.url.value;
+]]></body>
+</method>
+
+<method name="executed">
+<body><![CDATA[
+  
+]]></body>
+</method>
+
+</implementation>
+</binding>
+</bindings>

@@ -1,0 +1,51 @@
+<?xml version="1.0"?>
+<bindings xmlns="http://www.mozilla.org/xbl">
+<binding id="screenshot">
+<content xmlns:xul="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+  <xul:label class="desc" value="Screenshot of" />
+  <xul:vbox>
+    <xul:box class="node-selection" />
+    <xul:vbox align="center">
+      <xul:hbox align="center">
+        <xul:tooltip id="full-preview" onpopupshowing="this.lastChild.src = document.tooltipNode.src;"><xul:image /></xul:tooltip>
+        <xul:image anonid="preview" tooltip="full-preview" />
+      </xul:hbox>
+    </xul:vbox>
+  </xul:vbox>
+</content>
+<implementation>
+<constructor>
+  this.node = document.getAnonymousElementByAttribute(this, "class", "node-selection");
+  this.preview = document.getAnonymousElementByAttribute(this, "anonid", "preview");
+</constructor>
+
+<method name="restore">
+<parameter name="action" />
+<body><![CDATA[
+  this.node.restore(action.node);
+]]></body>
+</method>
+
+<method name="getActionObject">
+<body><![CDATA[
+  return {
+    node : this.node.getActionObject()
+  };
+]]></body>
+</method>
+
+<method name="executed">
+<parameter name="success" />
+<parameter name="result" />
+<body><![CDATA[
+  this.preview.src = result.data;
+  this.preview.setAttribute("width",result.width);
+  this.preview.setAttribute("height",result.height);
+  this.preview.width=result.width;
+  this.preview.height=result.height;
+]]></body>
+</method>
+
+</implementation>
+</binding>
+</bindings>

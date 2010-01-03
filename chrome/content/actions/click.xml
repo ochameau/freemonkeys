@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<bindings xmlns="http://www.mozilla.org/xbl">
+<binding id="click">
+<content xmlns:xul="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+  <xul:label class="desc" value="Click on" />
+  <xul:box class="node-selection" />
+</content>
+<implementation>
+<constructor>
+  this.node = document.getAnonymousElementByAttribute(this, "class", "node-selection");
+</constructor>
+
+<method name="restore">
+<parameter name="action" />
+<body><![CDATA[
+  this.node.restore(action.node);
+]]></body>
+</method>
+
+<method name="getActionObject">
+<body><![CDATA[
+  return {
+    node : this.node.getActionObject()
+  };
+]]></body>
+</method>
+
+<method name="executed">
+<parameter name="success" />
+<parameter name="result" />
+<body><![CDATA[
+  
+]]></body>
+</method>
+
+</implementation>
+</binding>
+</bindings>
