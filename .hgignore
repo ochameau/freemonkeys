@@ -2,3 +2,7 @@ syntax: glob
 *~
 *.xpi
 ./xulrunner
+./updates
+./profiles/empty/*.*
+./profiles/empty/Cache
+./profiles/empty/bookmarkbackups
