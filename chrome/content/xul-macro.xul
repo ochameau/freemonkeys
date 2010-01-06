@@ -37,6 +37,8 @@
       <button label="open url" onclick="addAction('openurl')" />
       <button label="execute" onclick="addAction('execute')" />
       <button label="close firefox" onclick="addAction('close-session')" />
+      <spacer />
+      <button label="duplicate" onclick="duplicateCurrentAction();" />
     </hbox>
     
     <richlistbox id="command-list" flex="1" />

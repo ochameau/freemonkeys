@@ -112,7 +112,7 @@ const myAppHandler = {
         appStartup.enterLastWindowClosingSurvivalArea();
       } else {
         dump("With GUI\n");
-        openWindow("chrome://xul-macro/content/xul-macro.xul",null);
+        openWindow("chrome://freemonkeys/content/freemonkeys.html",null);
         //cmdLine.preventDefault = true;
       }
     } catch(e) {

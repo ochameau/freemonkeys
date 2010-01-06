@@ -185,6 +185,13 @@ function saveActionsTo(destinationFile) {
   }
 }
 
+function duplicateCurrentAction() {
+  var uiList=document.getElementById('command-list');
+  if (!uiList.selectedItem) return;
+  
+  restoreOneAction(uiList.selectedItem.firstChild.getActionObject());
+}
+
 window.addEventListener("unload",function () {
     
     var file = Actions.getLastSessionFile();

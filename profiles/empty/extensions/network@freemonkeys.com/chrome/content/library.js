@@ -312,9 +312,18 @@ click : function (action, callback, count) {
       return;
     }
     
+    var button = 0;
+    var name = "click";
+    if (action.type=="middle")
+      button = 1;
+    else if (action.type=="right")
+      button = 2;
+    else if (action.type=="double")
+      name = "dblclick";
+    
     var event = node.ownerDocument.createEvent("MouseEvents");
-    event.initMouseEvent("click", true, true, node.ownerDocument.defaultView,
-      0, 0, 0, 0, 0, false, false, false, false, 0, null);
+    event.initMouseEvent(name, true, true, node.ownerDocument.defaultView,
+      0, 0, 0, 0, 0, false, false, false, false, button, null);
     
     node.dispatchEvent(event);
     callback(true,null);

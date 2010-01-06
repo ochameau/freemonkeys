@@ -1,0 +1,37 @@
+<html>
+<head>
+  <title>Freemonkeys</title>
+  <link href="chrome://freemonkeys/skin/freemonkeys.css" type="text/css" rel="stylesheet">
+  <script type="text/javascript" src="freemonkeys.js"></script>
+  
+  <link href="bespin/BespinEmbedded.css" type="text/css" rel="stylesheet">
+  <script type="text/javascript" src="bespin/BespinEmbedded.js"></script>
+</head>
+<body>
+<h1 id="title">Freemonkeys - Edit</h1>
+<div id="edit" class="panel">
+  <a href="#" onclick="gFreemonkeys.execute()">execute</a>
+  <div id="editor" class="bespin" data-bespinoptions='{ "settings": { "strictlines": true }, "stealFocus": false }'>
+  // The text of this div shows up in the editor.
+  var thisCode = "what shows up in the editor";
+  function editMe() {
+   alert("and have fun!");
+  }
+  </div>
+</div>
+<div id="settings" class="panel">
+  <p>
+    <h3>Firefox installations :</h3>
+    <span>default 3.5 :</span><span class="firefox-path" />
+    <span>3.0 :</span><span class="firefox-path" />
+    <span>Minefield :</span><span class="firefox-path" />
+  </p>
+  <p>
+    <h3>Profiles :</h3>
+    <span>default :</span><span class="profile-path" />
+    <span>second :</span><span class="profile-path" />
+  </p>
+</div>
+
+</body>
+</html>

@@ -1,9 +1,0 @@
-# this app
-content xul-macro file:content/
-
-resource xul-macro file:resource/
-
-locale branding en-US locale/branding/
-locale branding fr-FR locale/branding/
-
-skin xul-macro classic file:skin/

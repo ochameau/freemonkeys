@@ -1,0 +1,9 @@
+# this app
+content freemonkeys file:content/
+
+resource freemonkeys file:resource/
+
+locale branding en-US locale/branding/
+locale branding fr-FR locale/branding/
+
+skin freemonkeys classic file:skin/
