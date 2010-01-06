@@ -210,7 +210,7 @@ PuppetConnexion.prototype.connect = function (host, port, callback, count)
 {
   try {
     var transportService = Components.classes["@mozilla.org/network/socket-transport-service;1"].getService(Components.interfaces.nsISocketTransportService);
-    var transport = transportService.createTransport(null,0,"localhost",24242,null);
+    var transport = transportService.createTransport(null,0,"localhost",port,null);
     
     this.accept(transport);
     

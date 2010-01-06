@@ -14,25 +14,71 @@ var gFreemonkeys = {
     delete this.editor;
     this.editor = document.getElementById("editor").bespin;
     return this.editor;
+  },
+  get report () {
+    delete this.report;
+    this.report = document.getElementById("report");
+    return this.report;
   }
 };
 
+gFreemonkeys.switchTo = function (panel) {
+  
+}
 
-var m = fm.getOneMonkey();
-var w = m.getTopWindow();
-fm.inspect(w);
+gFreemonkeys.print = function (classname, type, msg) {
+  this.report.innerHTML += '<li class="'+classname+'">'+type+" : "+msg+"</li>";
+}
+gFreemonkeys.cleanReport = function () {
+  this.report.innerHTML = "";
+}
 
 gFreemonkeys.execute = function () {
-  var sandbox = Components.utils.Sandbox("http://localhost.localdomain.:0/");
-  sandbox.fm = {
-    getOneMonkey : function (firefox, profile) {
-      if (firefox && firefox!="default") throw "Only handle one firefox, the default's one";
-      if (profile && profile!="default") throw "Only handle one profile, the default's one";
-      return ;
+  gFreemonkeys.cleanReport();
+  gFreemonkeys.switchTo("report");
+  function listener(type, res) {
+    if (type=="assert-pass" || type=="assert-fail") {
+      var msg="line "+res.line+": ";
+      msg += res.name;
+      if (res.args) {
+        var l=[];
+        for(var i in res.args)
+          l.push("("+(typeof res.args[i])+") "+res.args[i]);
+        msg += " ( "+l.join(", ")+" )";
+      }
+      gFreemonkeys.print(type=="assert-pass"?"pass":"fail",type=="assert-pass"?"PASS":"FAIL",msg);
+    } else if (type=="exception") {
+      gFreemonkeys.print("fail","Exception","line "+res.line+": "+res.message);
+    } else if (typeof res=="object") {
+      gFreemonkeys.print("debug",type,(res.line?res.line:"?")+" - "+res.toSource());
+      inspect(res);
+    } else {
+      gFreemonkeys.print("debug",type,res?res:"");
     }
-  };
-  var code = this.editor.getContent();
-  Components.utils.evalInSandbox(code, sandbox);
+  }
+  if (!this.monkey) {
+    Components.utils.import("resource://freemonkeys/freemonkeys.js");
+    var binary = "C:\\Program Files\\Mozilla Firefox 3 en\\firefox.exe";
+    var profile = "C:\\Documents and Settings\\Administrateur\\Bureau\\freemonkeys\\profiles\\empty";
+    gFreemonkeys.print("launch","firefox:"+binary+" with profile:"+profile);
+    newMonkey(binary, profile, 
+      function (monkey, error) {
+        if (!monkey) {
+          gFreemonkeys.print("error","Error while childbearing the monkey : "+error);
+        } else {
+          gFreemonkeys.monkey = monkey;
+          gFreemonkeys.print("internal","A new monkey is born!");
+          gFreemonkeys.monkey.execute(gFreemonkeys.editor.getContent(),listener);
+        }
+      });
+  } else {
+    this.monkey.execute(gFreemonkeys.editor.getContent(),listener);
+  }
+}
+
+gFreemonkeys.freeMonkeys = function () {
+  if (!this.monkey) return;
+  this.monkey.free();
 }
 
 gFreemonkeys.getLastSessionFile = function () {
@@ -105,6 +151,7 @@ gFreemonkeys.load = function () {
 gFreemonkeys.unload = function () {
   this.saveWindowParams();
   this.saveSession();
+  this.freeMonkeys();
   
   // Ask to shutdown in order to close JSConsole automatically
   var appStartup = Components.classes['@mozilla.org/toolkit/app-startup;1'].

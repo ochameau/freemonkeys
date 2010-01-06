@@ -6,20 +6,41 @@
   
   <link href="bespin/BespinEmbedded.css" type="text/css" rel="stylesheet">
   <script type="text/javascript" src="bespin/BespinEmbedded.js"></script>
+<style>
+li {
+  list-style-image: none;
+  margin:0;
+}
+li.pass, li.fail {
+  -moz-border-radius: 5px;
+  padding: 5px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  margin:5px;
+}
+li.pass {
+  background-color: lightgreen;
+  border: 1px solid green;
+}
+li.fail {
+  background-color: #FFE0E0;
+  border: 1px solid red;
+}
+
+</style>
 </head>
 <body>
 <h1 id="title">Freemonkeys - Edit</h1>
 <div id="edit" class="panel">
   <a href="#" onclick="gFreemonkeys.execute()">execute</a>
-  <div id="editor" class="bespin" data-bespinoptions='{ "settings": { "strictlines": true }, "stealFocus": false }'>
-  // The text of this div shows up in the editor.
-  var thisCode = "what shows up in the editor";
-  function editMe() {
-   alert("and have fun!");
-  }
+  <div style="min-height:400px" id="editor" class="bespin" data-bespinoptions='{ "settings": { "strictlines": true }, "stealFocus": false }'>
+  
   </div>
 </div>
-<div id="settings" class="panel">
+<ul id="report" class="panel">
+  <li>empty!</li>
+</ul>
+<div id="settings" class="panel" style="display:none;">
   <p>
     <h3>Firefox installations :</h3>
     <span>default 3.5 :</span><span class="firefox-path" />

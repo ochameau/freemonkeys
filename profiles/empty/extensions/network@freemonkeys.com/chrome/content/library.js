@@ -916,7 +916,7 @@ Server.prototype.cleanPuppets = function () {
   this.serv.close();
 }
 
-var server = new Server(24242);
+var server = new Server(9000);
 server.start();
 
 
