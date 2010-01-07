@@ -1,0 +1,12 @@
+body {
+  padding: 20px; font-family: Calibri, Helvetica, Arial; 
+  width: 800px; height: 600px;
+}
+h1 {
+  border-bottom: 1px solid #ddd; font-size:120%;
+}
+.bespin {
+  margin: 0; padding: 0; border: 0; height: 300px; 
+  border: 10px solid #ddd; 
+  -moz-border-radius: 10px; -webkit-border-radius: 10px;
+}
