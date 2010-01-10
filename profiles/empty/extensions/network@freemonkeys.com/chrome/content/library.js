@@ -13,6 +13,174 @@ var screenshotId=1;
 
 var macro = {
 
+execute : function (code, listener) {
+  var garden = Components.utils.Sandbox(this.__parent__);//"http://localhost.localdomain.:0/");
+  
+  garden.monkey = {};
+  
+  garden.monkey.windows = {}
+  
+  garden.monkey.windows.MonkeyTab = 
+    function MonkeyTab(gBrowser, tab) {
+      var linkedBrowser = tab.linkedBrowser;
+      var webNavigation = linkedBrowser.webNavigation;
+      this.open = function (url) {
+        linkedBrowser.loadURI(url,null,null);
+      }
+      this.close = function () {
+        gBrowser.removeTab(tab);
+      }
+      this.back = function () {
+        if (webNavigation.canGoBack)
+          webNavigation.goBack();
+      }
+      this.forward = function () {
+        if (webNavigation.canGoForward)
+          webNavigation.goForward();
+      }
+      this.reload = function () {
+        webNavigation.reload(webNavigation.LOAD_FLAGS_BYPASS_PROXY | webNavigation.LOAD_FLAGS_BYPASS_CACHE);
+      }
+      this.getInternal = function () {
+        return tab;
+      }
+    };
+  
+  garden.monkey.windows.MonkeyWindow = 
+    function MonkeyWindow(win) {
+      this.win = win;
+      var gBrowser = win.gBrowser;
+      
+      this.tabs = {
+        new : function (url, doNotSelect) {
+          if (!url) url="about:blank";
+          var tab = gBrowser.addTab(url);
+          if (!doNotSelect)
+            gBrowser.selectedTab = tab;
+          return new garden.monkey.windows.MonkeyTab(gBrowser, tab);
+        },
+        get current() {
+          return new garden.monkey.windows.MonkeyTab(gBrowser, gBrowser.selectedTab);
+        }
+      }
+      this.minimize = function () {
+        win.minimize();
+      }
+      this.maximize = function () {
+        win.maximize();
+      }
+      this.close = function () {
+        win.close();
+      }
+      this.getInternal = function () {
+        return win;
+      }
+    };
+  
+  garden.monkey.windows.ORDER_BY_ZORDER = 1;
+  garden.monkey.windows.ORDER_BY_CREATION_DATE = 2;
+  garden.monkey.windows.get = function (id, type, title, order) {
+    var list = [];
+    
+    var wm = Components.classes["@mozilla.org/appshell/window-mediator;1"]
+                     .getService(Components.interfaces.nsIWindowMediator);
+    var enumerator = wm.getXULWindowEnumerator(null);
+    while(enumerator.hasMoreElements()) {
+      var xulWin = enumerator.getNext().QueryInterface( Components.interfaces.nsIXULWindow);
+      var requestor = xulWin.docShell.QueryInterface(Components.interfaces.nsIInterfaceRequestor);
+      var chromewin = requestor.getInterface(Components.interfaces.nsIDOMWindow);
+      var domwin = chromewin.document.documentElement;
+      
+      if (id && id!=domwin.id) continue;
+      if (type && type!=domwin.getAttribute("windowtype")) continue;
+      if (title && title!=domwin.getAttribute("title")) continue;
+      
+      var zindex = xulWin.zLevel;
+      
+      list.push({zindex:zindex,win:chromewin});
+    }
+    
+    // Sort the retrieved list
+    if (!order || order == monkey.windows.ORDER_BY_ZORDER) {
+      list.sort(function (a,b) {return a.zindex<b.zindex;});
+    }
+    
+    // Remove work info and return only windows wrapper
+    var result = [];
+    for(var i=0; i<list.length; i++) {
+      result.push(new garden.monkey.windows.MonkeyWindow(list[i].win));
+    }
+    
+    return result;
+  };
+  
+  
+  garden.assert = {
+    _assert : function (assert, args) {
+      if (assert) {
+        listener("assert-pass",Components.stack.caller.caller.lineNumber+1,{name:arguments.callee.caller.name});
+      } else {
+        listener("assert-fail",Components.stack.caller.caller.lineNumber+1,{name:arguments.callee.caller.name,args:args});
+      }
+    },
+    isTrue : function isTrue(v) {
+      this._assert((typeof v=="boolean" && v),[v]);
+    },
+    isFalse : function isFalse(v) {
+      this._assert((typeof v=="boolean" && !v),[v]);
+    },
+    isEquals : function isEquals(a,b) {
+      this._assert(a===b,[a,b]);
+    },
+    isDefined : function isDefined(v) {
+      this._assert(v!=null,[v]);
+    }
+  };
+  
+  garden.log = {
+    print : function (v) {
+      listener("print",Components.stack.caller.lineNumber+1,v);
+    },
+    debug : function (v) {
+      listener("print",Components.stack.caller.lineNumber+1,v);
+    },
+    inspect : function (v) {
+      //listener("inspect",Components.stack.caller.lineNumber+1,v);
+      inspect(v);
+    }
+  };
+  
+  garden.elements = {
+    xpath : function (win, xpath) {
+      
+    },
+    selector : function (win, selector) {
+      
+    }
+  };
+  
+  try {
+    var result = Components.utils.evalInSandbox(code, garden, "1.8", "test-buffer", 0);
+  } catch(e) {
+    var line;
+    if (e.location) {
+      var s=e.location;
+      while(s.filename!="test-buffer" && s.caller) {
+        Components.utils.reportError("stack : "+s);
+        s = s.caller;
+      }
+      if (s && s.filename=="test-buffer")
+        line = s.lineNumber+1;
+    }
+    if (!line)
+      line=-1;
+    listener("exception",line,{message:""+e,exception:e});
+  }
+  listener("execute",-1,"end");
+},
+
+
+
 getWindow : function (winInfo) {
   var first=null;
   var last=null;
@@ -87,30 +255,6 @@ getFrame : function (frame) {
   return win;
 },
 
-execute : function (action, callback, startTime, win) {
-  if (!startTime) startTime=new Date().getTime();
-  try {
-    if (!win)
-      win = this.getFrame(action.frame);
-    
-    var doc=win.document;
-    if (doc.wrappedJSObject)
-      doc=wrappedJSObject;
-  
-    var sandbox = new Components.utils.Sandbox(win); // Use DOM Window
-    sandbox.window = win;
-    sandbox.document = doc;
-    var start=new Date().getTime();
-    var v = Components.utils.evalInSandbox("with(window){"+action.script+"}", sandbox);
-    callback(true, {value:v, time:new Date().getTime()-start});
-  } catch(e) {
-    dump("!!!!!!!!!!!!!!!!!"+e+"\n");
-    if (new Date().getTime()-startTime>10000)
-      callback(false,{msg:""+e, stack:""+e.stack});
-    else
-      window.setTimeout(function() {macro.execute(action,callback,startTime,win);});
-  }
-},
 
 screenshotWindow : function (win, maxSize) {
   var canvasW=0;
@@ -469,7 +613,9 @@ getSidebarElt : function (id) {
 	return this.getHTMLSidebarWnd().document.getElementById(id);
 },
 getElementPosInDoc : function (obj) {
-	var curleft = curtop = 0;
+  if (obj.boxObject)
+    return {x:obj.boxObject.x, y:obj.boxObject.y};
+  var curleft = curtop = 0;
 	if (obj.offsetParent) {
 		do {
 			curleft += obj.offsetLeft;
@@ -511,7 +657,7 @@ saveCanvas : function (canvas, destFile) {
 rectToCanvas : function (wnd, x,y,w,h) {
 	
 	var windowWidth = wnd.innerWidth;
-    var windowHeight = wnd.innerHeight;
+  var windowHeight = wnd.innerHeight;
 	
 	if (!x)
 		x=0;
@@ -522,19 +668,19 @@ rectToCanvas : function (wnd, x,y,w,h) {
 	if (!h)
 		h=windowHeight;
 	
-    var canvas = document.createElementNS("http://www.w3.org/1999/xhtml","canvas");
-    canvas.width = w;
-    canvas.height = h;
-    
-    var ctx = canvas.getContext("2d");
-	/*
-    ctx.scale(300 / windowWidth,
-              300 / windowHeight);
-	*/
-    ctx.drawWindow(wnd,
-                   x, y,
-                   w, h,
-                   "rgb(0,0,0)");
+  var canvas = document.createElementNS("http://www.w3.org/1999/xhtml","canvas");
+  canvas.width = w;
+  canvas.height = h;
+  
+  var ctx = canvas.getContext("2d");
+/*
+  ctx.scale(300 / windowWidth,
+            300 / windowHeight);
+*/
+  ctx.drawWindow(wnd,
+                 x, y,
+                 w, h,
+                 "rgb(255,255,255)");
 	
 	return canvas;
 },
@@ -557,7 +703,7 @@ _currentOver:null,
 highlightOver : function (screenX, screenY) {
 try {
 	if (this._currentOver) {
-		this._currentOver.style.border="";
+		this._currentOver.style.removeProperty("border");
 	}
 	var browser=this._overing;
 	var x=screenX-browser.document.documentElement.boxObject.screenX;
@@ -565,20 +711,65 @@ try {
 	var elt=browser.document.elementFromPoint(x,y);
 	var s="";
   var iframes=[];
+  
+  var anonymousNodes = elt.ownerDocument.getAnonymousNodes(elt);
+  if (anonymousNodes && anonymousNodes.length>0) {
+    //Components.utils.reportError("Got anonymous nodes!");
+    for(var i=0; i<anonymousNodes.length; i++) {
+      var np=this.getElementPosInDoc(anonymousNodes[i]);
+      var width = anonymousNodes[i].clientWidth;
+      var height = anonymousNodes[i].clientHeight;
+      //var debug = anonymousNodes[i].tagName+" -> "+np.x+"<="+x+" && "+np.y+"<="+y+" && "+x+"<="+np.x+"+"+width+" && "+y+"<="+np.y+"+"+height;
+      if (np.x<=x && np.y<=y && x<=np.x+width && y<=np.y+height) {
+        //Components.utils.reportError("MATCH : "+debug);
+        elt = anonymousNodes[i];
+        anonymousNodes = elt.childNodes;
+        i=-1;
+        if (!anonymousNodes || anonymousNodes.length==0)
+          break;
+        continue;
+      } else {
+        //Components.utils.reportError("no match : "+debug);
+      }
+    }
+  }
+    
 	while(elt && elt.contentWindow) {
-		var p=elt.boxObject?elt.boxObject:this.getElementPosInDoc(elt);
-		s+=x+"x+"+y;
+		var p=this.getElementPosInDoc(elt);
+		s+=x+"x"+y;
 		x=x-p.x;
 		y=y-p.y;
 		s+=" -("+elt.tagName+":"+elt.id+"-"+p.x+"x"+p.y+")> "+x+"x"+y;
     iframes.push(elt);
 		elt=elt.contentWindow.document.elementFromPoint(x,y);
+    var anonymousNodes = elt.ownerDocument.getAnonymousNodes(elt);
+    if (anonymousNodes && anonymousNodes.length>0) {
+      //Components.utils.reportError("Got anonymous nodes!");
+      for(var i=0; i<anonymousNodes.length; i++) {
+        var np=this.getElementPosInDoc(anonymousNodes[i]);
+        var width = anonymousNodes[i].clientWidth;
+        var height = anonymousNodes[i].clientHeight;
+        //var debug = anonymousNodes[i].tagName+" -> "+np.x+"<="+x+" && "+np.y+"<="+y+" && "+x+"<="+np.x+"+"+width+" && "+y+"<="+np.y+"+"+height;
+        if (np.x<=x && np.y<=y && x<=np.x+width && y<=np.y+height) {
+          //Components.utils.reportError("MATCH : "+debug);
+          elt = anonymousNodes[i];
+          anonymousNodes = elt.childNodes;
+          i=-1;
+          if (!anonymousNodes || anonymousNodes.length==0)
+            break;
+          continue;
+        } else {
+          //Components.utils.reportError("no match : "+debug);
+        }
+      }
+    }
 	}
+  Components.utils.reportError(s);
 	if (!elt)
 		return "no elt > "+s;
   
   // Hightlight current element
-	elt.style.border="1px solid red";
+	elt.style.setProperty("border","1px solid red","important");
   
   // Save a reference
 	this._currentOver=elt;
@@ -729,7 +920,7 @@ getNodeInfo : function (node, dontGetPreview) {
 	while(elt && elt.contentWindow) {
 	    if (elt.tagName!="tabbrowser")
 		framesPaths.push(getXPath(elt).join('/'));
-    var p=elt.boxObject?elt.boxObject:this.getElementPosInDoc(elt);
+    var p=this.getElementPosInDoc(elt);
 		x=x-p.x;
 		y=y-p.y;
 		
@@ -741,15 +932,16 @@ getNodeInfo : function (node, dontGetPreview) {
   var obj = {
     xpath : getXPath(binding?binding:node).join('/'),
     binding : binding?getXPath(node,binding).join('/'):null,
-    framesXPath : framesPaths
+    framesXPath : framesPaths,
+    pos : pos
   };
   
   if (!dontGetPreview) {
-    var canvas = this.rectToCanvas(node.ownerDocument.defaultView,pos.x,pos.y,node.offsetWidth,node.offsetHeight);
+    var canvas = this.rectToCanvas(node.ownerDocument.defaultView,bo.x,bo.y,bo.width,bo.height);
     obj.preview = {
       data : canvas.toDataURL("image/png", ""),
-      width : node.offsetWidth,
-      height : node.offsetHeight
+      width : bo.width,
+      height : bo.height
     };
   }
   
@@ -777,7 +969,7 @@ getNodeInfo : function (node, dontGetPreview) {
 	var elt=browser.document.elementFromPoint(x,y);
 
 	while(elt && elt.contentWindow) {
-		var p=elt.boxObject?elt.boxObject:this.getElementPosInDoc(elt);
+		var p=this.getElementPosInDoc(elt);
 		x=x-p.x;
 		y=y-p.y;
     framesPos.push({elt:elt.id, x:p.x, y:p.y});
@@ -812,7 +1004,11 @@ _overListener : function (evt) {
   if (x!=this.lastX || y!=this.lastY) {
     this.lastX=x;
     this.lastY=y;
+    var prevOver = macro._currentOver;
     macro.highlightOver(x,y);
+    if (prevOver!=macro._currentOver) {
+      macro.updateNodeInfo(macro._currentOver);
+    }
   }
 },
 _overing : false,
@@ -823,6 +1019,10 @@ stopOvering : function () {
       this._currentOver.style.border="";
     this._overing.document.removeEventListener("mousemove",this._overListener,true);
     this._overing=false;
+  }
+  if (this.infoWin) {
+    this.infoWin.close();
+    this.infoWin=null;
   }
 },
 startOvering : function (win,callback) {
@@ -846,6 +1046,26 @@ startOvering : function (win,callback) {
       _self.stopOvering();
       callback(_self.getWindowInfo(win), _self.getFrameInfo(_self._currentOver.ownerDocument.defaultView), _self.getNodeInfo(_self._currentOver));
     },true);
+  
+  infoWin = window.open('data:text/html;charset=utf-8,',"node-info","resizable=no,scrollbars=no,status=no,width=1,height=1,popup=yes");
+  infoWin.addEventListener("load",function () {
+    infoWin.document.body.innerHTML="...";
+    infoWin.document.body.style.backgroundColor="transparent";
+    var width = 400; var height = 200;
+    infoWin.resizeTo(400,200);
+    infoWin.moveTo(window.screen.availWidth-width-20,window.screen.availHeight-height-20);
+  },false);
+  this.infoWin = infoWin;
+},
+updateNodeInfo : function (node) {
+  var info = this.getNodeInfo(node);
+  var html = "";
+  html += '<div style="font-weight: bold; font-size: 1em; padding-bottom: 10px;">'+info.xpath+'</div>';
+  html += '<div style="font-size: 1em; padding-bottom: 10px;">anonymous: '+info.binding+'</div>';
+  html += '<div style="text-align: center">';
+  html += '<img src="'+info.preview.data+'" style="max-width:350px; max-height: 150px;border: 1px solid #ddd; -moz-box-shadow:0 0 10px #000; " width="'+info.preview.width+'" height="'+info.preview.height+'" />'
+  html += '</div>';
+  this.infoWin.document.body.innerHTML=html;
 }
 
 };

@@ -34,8 +34,9 @@ function openWindow(aChromeURISpec, aArgument)
 {
   var ww = Components.classes["@mozilla.org/embedcomp/window-watcher;1"].
     getService(Components.interfaces.nsIWindowWatcher);
+    
   ww.openWindow(null, aChromeURISpec, "_blank",
-                "chrome,menubar,toolbar,status,resizable,dialog=no",
+                'chrome=yes,resizable=yes,dialog=no,scrollbars=yes',
                 aArgument);
 }
  

@@ -1,4 +1,4 @@
-const EXPORTED_SYMBOLS = ["newMonkey"];
+const EXPORTED_SYMBOLS = ["FreemonkeysZoo"];
 
 const hiddenWindow = Components.classes["@mozilla.org/appshell/appShellService;1"]
         .getService(Components.interfaces.nsIAppShellService)
@@ -76,7 +76,8 @@ Application.connect = function (host, port, profile, callback) {
             dump("got it\n");
             callback(true,{
               puppet : puppet, 
-              macro : macro
+              asyncMacro : macro,
+              syncMacro : puppet.blocking.getValue("macro")
             });
           });
       }
@@ -88,79 +89,150 @@ Application.connect = function (host, port, profile, callback) {
     });
 }
 
-
-function Monkey(puppet, macro) {
-  this.puppet = puppet;
-  this.macro = macro;
-  this.syncMacro = puppet.blocking.getValue("macro");
-}
-
-Monkey.prototype.execute = function (code, listener) {
-  listener("execute","");
-  var sandbox = Components.utils.Sandbox("http://localhost.localdomain.:0/");
-  sandbox.fm = {
-    getOneMonkey : function (firefox, profile) {
-      if (firefox && firefox!="default") throw "Only handle one firefox, the default's one";
-      if (profile && profile!="default") throw "Only handle one profile, the default's one";
-      return ;
-    }
-  };
-  sandbox.assert = {
-    _assert : function (assert, args) {
-      if (assert) {
-        listener("assert-pass",{name:arguments.callee.caller.name,line:Components.stack.caller.caller.lineNumber+1});
-      } else {
-        listener("assert-fail",{name:arguments.callee.caller.name,line:Components.stack.caller.caller.lineNumber,args:args});
-      }
-    },
-    isTrue : function isTrue(v) {
-      this._assert((typeof v=="boolean" && v),[v]);
-    },
-    isFalse : function isFalse(v) {
-      this._assert((typeof v=="boolean" && !v),[v]);
-    },
-    isEquals : function isEquals(a,b) {
-      this._assert(a===b,[a,b]);
-    },
-    isDefined : function isDefined(v) {
-      this._assert(v!=null,[v]);
-    }
-  };
-  sandbox.log = {
-    print : function (v) {
-      listener("print",v);
-    },
-    debug : function (v) {
-      listener("print",v);
-    },
-    inspect : function (v) {
-      listener("inspect",v);
-    }
-  };
-  try {
-    var result = Components.utils.evalInSandbox(code, sandbox, "1.8", "your-test", 0);
-    listener("all-ok",result);
-  } catch(e) {
-    listener("exception",{message:e.message,line:e.lineNumber,exception:e});
+function MonkeyTab(gBrowser, tab) {
+  var linkedBrowser = tab.linkedBrowser;
+  this.open = function (url) {
+    linkedBrowser.loadURI(url,null,null);
+  }
+  this.close = function () {
+    gBrowser.removeTab(tab);
+  }
+  this.back = function () {
+    linkedBrowser.webNavigation.goBack();
+  }
+  this.forward = function () {
+    linkedBrowser.webNavigation.goForward();
+  }
+  this.getInternal = function () {
+    return tab;
   }
 }
+
+function MonkeyWindow(win) {
+  this.win = win;
+  var gBrowser = win.gBrowser;
+  
+  this.tabs = {
+    new : function (url, doNotSelect) {
+      if (!url) url="about:blank";
+      var tab = gBrowser.addTab(url);
+      if (!doNotSelect)
+        gBrowser.selectedTab = tab;
+      return new MonkeyTab(gBrowser, tab);
+    },
+    get current() {
+      return new MonkeyTab(gBrowser, gBrowser.selectedTab);
+    }
+  }
+}
+
+function Monkey(puppet, macro, listener) {
+  this.puppet = puppet;
+  this.macro = macro;
+  var syncMacro = puppet.blocking.getValue("macro");
+  this.syncMacro = syncMacro;
+  
+  this.windows = {
+    get : function (id, name, title, order) {
+      // Remote call
+      var list = syncMacro.getWindows();
+      
+      // Sort the retrieved list
+      if (!order || order == Monkey.WINDOWS_ORDER_BY_ZORDER) {
+        list.sort(function (a,b) {return a.zindex<b.zindex;});
+      }
+      
+      // Remove work info and return only windows references
+      var result = [];
+      for(var i=0; i<list.length; i++) {
+        result.push(new MonkeyWindow(list[i].win));
+      }
+      
+      return result;
+      
+    }
+  }
+}
+Monkey.WINDOWS_ORDER_BY_ZORDER = 1;
+Monkey.WINDOWS_ORDER_BY_CREATION_DATE = 2;
+
+
 Monkey.prototype.free = function () {
   this.syncMacro.quit();
   this.puppet.close();
 }
 
 
-var gPortNumber = 9000;
+const FreemonkeysZoo = {};
 
-function newMonkey(binary, profile, callback) {
-  this.port = gPortNumber++;
-  Application.start(binary, profile);
+FreemonkeysZoo._pens = {};
+
+FreemonkeysZoo.getLivingMonkeys = function () {
+  var l = [];
+  for(var i in this._pens) {
+    for(var j in this._pens[i]) {
+      l.push(this._pens[i][j]);
+    }
+  }
+  return l;
+}
+
+FreemonkeysZoo.freeThemAll = function () {
+  for(var i in this._pens) {
+    for(var j in this._pens[i]) {
+      var m = this._pens[i][j];
+      m.syncMacro.quit();
+      m.puppet.close();
+    }
+  }
+}
+
+FreemonkeysZoo.selectNode = function (application, profile, onClick) {
+  var monkey = FreemonkeysZoo._pens[application][profile];
+  if (!monkey) return;
+  monkey.asyncMacro.execObjectFunction(
+      "selectNode",
+      [onClick],
+      function (res) {}
+    );
+}
+
+var gPortNumber = 9000;
+FreemonkeysZoo.execute = function (application, profile, code, listener) {
   
-  Application.connect("localhost", this.port, profile, 
-    function (success, res) {
-      if (success)
-        callback(new Monkey(res.puppet, res.macro));
-      else
-        callback(null, res.msg);
-    });
+  function getMonkey(onMonkeyAlive) {
+    if (FreemonkeysZoo._pens[application] && FreemonkeysZoo._pens[application][profile])
+      return onMonkeyAlive(FreemonkeysZoo._pens[application][profile]);
+    
+    listener("monkey",-1,"start a new one");
+    
+    Application.start(application, profile);
+    
+    Application.connect("localhost", gPortNumber++, profile, 
+      function (success, res) {
+        if (success) {
+          if (!FreemonkeysZoo._pens[application])
+            FreemonkeysZoo._pens[application] = {};
+          FreemonkeysZoo._pens[application][profile] = res;
+          onMonkeyAlive(res);
+        } else {
+          error = res.msg;
+          listener("error",-1,"Error during monkey creation : "+res.msg);
+        }
+      });
+    
+    // TODO: add timeout
+    //listener("error",-1,"Monkey creation timeout !?");
+  }
+  
+  getMonkey(function (monkey) {
+    listener("monkey",-1,"ready");
+    monkey.asyncMacro.execObjectFunction(
+        "execute",
+        [code, listener],
+        function (res) {
+          listener("debug",-1,"distant execute returned.");
+        }
+      );
+  });
 }

@@ -4,54 +4,71 @@
   <link href="chrome://freemonkeys/skin/freemonkeys.css" type="text/css" rel="stylesheet">
   <script type="text/javascript" src="freemonkeys.js"></script>
   
+  <script src="codemirror/codemirror.js" type="text/javascript"></script>
+  <script src="codemirror/mirrorframe.js" type="text/javascript"></script>
+  
+  <script src="jquery/jquery-1.3.2.min.js" type="text/javascript"></script>
+  <script src="jquery/jquery.tools.min.js" type="text/javascript"></script>
+  
+  <link href="jquery/jquery.bt.css" type="text/css" rel="stylesheet">
+  <script src="jquery/jquery.bt.min.js" type="text/javascript"></script>
+  
+  <!--
   <link href="bespin/BespinEmbedded.css" type="text/css" rel="stylesheet">
   <script type="text/javascript" src="bespin/BespinEmbedded.js"></script>
-<style>
-li {
-  list-style-image: none;
-  margin:0;
-}
-li.pass, li.fail {
-  -moz-border-radius: 5px;
-  padding: 5px;
-  padding-top: 1px;
-  padding-bottom: 1px;
-  margin:5px;
-}
-li.pass {
-  background-color: lightgreen;
-  border: 1px solid green;
-}
-li.fail {
-  background-color: #FFE0E0;
-  border: 1px solid red;
-}
+  -->
 
-</style>
 </head>
-<body>
+<body hidechrome="true">
 <h1 id="title">Freemonkeys - Edit</h1>
-<div id="edit" class="panel">
-  <a href="#" onclick="gFreemonkeys.execute()">execute</a>
-  <div style="min-height:400px" id="editor" class="bespin" data-bespinoptions='{ "settings": { "strictlines": true }, "stealFocus": false }'>
-  
-  </div>
+
+
+<div id="debug-box" style="text-align: right">
+  <a href="#" onclick="inspect(document)">DOMi</a>
+  <a href="#" onclick="inspect(gFreemonkeys.editor.get('gutterView'))">test</a>
+  <a href="#" onclick="aboutConfig()">about:config</a>
+  <a href="#" onclick="executeDebug()">execute++</a>
 </div>
-<ul id="report" class="panel">
-  <li>empty!</li>
-</ul>
-<div id="settings" class="panel" style="display:none;">
-  <p>
-    <h3>Firefox installations :</h3>
-    <span>default 3.5 :</span><span class="firefox-path" />
-    <span>3.0 :</span><span class="firefox-path" />
-    <span>Minefield :</span><span class="firefox-path" />
-  </p>
-  <p>
-    <h3>Profiles :</h3>
-    <span>default :</span><span class="profile-path" />
-    <span>second :</span><span class="profile-path" />
-  </p>
+
+<div id="panels">
+  <div id="panels-selection">
+    <a href="#" onclick="gFreemonkeys.switchTo('')" class="current">Edit</a>
+    <a href="#" onclick="gFreemonkeys.switchTo('')">Settings</a>
+    <a href="#" onclick="gFreemonkeys.switchTo('')">Report</a>
+  </div>
+  
+  <div id="panel-edit" class="panel current">
+    <div class="actions">
+      <a href="#" onclick="gFreemonkeys.execute()">&raquo; execute</a>
+      -
+      <a href="#" onclick="gFreemonkeys.selectNode()">&raquo; select node</a>
+    </div>
+    <div id="code-editor-container">
+      <div id="error-tooltip">&nbsp;</div>
+    </div>
+    <!--
+    <div style="min-height:400px" id="editor" class="bespin" data-bespinoptions='{ "settings": { "strictlines": true }, "stealFocus": false }'></div>
+    -->
+  </div>
+  
+  <ul id="panel-report" class="panel" style="display:none">
+    <li>empty!</li>
+  </ul>
+  
+  <div id="panel-settings" class="panel" style="display:none;">
+    <p>
+      <h3>Firefox installations :</h3>
+      <span>default 3.5 :</span><span class="firefox-path" />
+      <span>3.0 :</span><span class="firefox-path" />
+      <span>Minefield :</span><span class="firefox-path" />
+    </p>
+    <p>
+      <h3>Profiles :</h3>
+      <span>default :</span><span class="profile-path" />
+      <span>second :</span><span class="profile-path" />
+    </p>
+  </div>
+  
 </div>
 
 </body>

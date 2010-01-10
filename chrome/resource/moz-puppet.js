@@ -22,7 +22,7 @@ function addLocalObject(id, o) {
   localObjects[id]=o;
 }
 
-function dump() {}
+//function dump() {}
 
 ///////////////////////////////////////////////////////////////////////
 
@@ -98,6 +98,7 @@ var PuppetNetworkAPI = {
   },
   
   _remoteObjectToLocal : function (puppet, response) {
+    dump("remote to local : "+response.type+"\n");
     if (response.type=="null") {
       
       return null;
@@ -130,7 +131,8 @@ var PuppetNetworkAPI = {
       return obj;
       
     } else if (response.type=="array") {
-      
+    
+      dump("receive array\n");
       var array = [];
       for(var i=0; i<response.array.length; i++) {
         array.push(PuppetNetworkAPI._remoteObjectToLocal(puppet, response.array[i]));
@@ -148,6 +150,7 @@ var PuppetNetworkAPI = {
       
     } else {
       
+      dump("receive unknown type : "+response.type+"\n");
       return response.value;
       
     }
@@ -164,6 +167,17 @@ var PuppetNetworkAPI = {
       attribute=localObjects[objectId][attributeName];
     } catch(e) {
       dump("!!! Unable to read attribute : $("+objectId+")."+attributeName+"\n");
+    }
+    return this._localObjectToRemote(attribute);
+  },
+  
+  setAttribute : function (puppet, objectId, attributeName, attributeValue) {
+    var attribute=null;
+    try {
+      localObjects[objectId][attributeName]=this._remoteObjectToLocal(puppet, attributeValue);
+      attribute=localObjects[objectId][attributeName];
+    } catch(e) {
+      dump("!!! Unable to set attribute : $("+objectId+")."+attributeName+"\n");
     }
     return this._localObjectToRemote(attribute);
   },
@@ -475,6 +489,11 @@ BlockingPuppet.prototype.getAttribute = function (objectId,attributeName) {
   return PuppetNetworkAPI._remoteObjectToLocal( this.connexion, response );
 }
 
+BlockingPuppet.prototype.setAttribute = function (objectId,attributeName,attributeValue) {
+  var response = this.connexion.syncRequest ("setAttribute",[objectId,attributeName,PuppetNetworkAPI._localObjectToRemote(attributeValue)]);
+  return PuppetNetworkAPI._remoteObjectToLocal( this.connexion, response );
+}
+
 BlockingPuppet.prototype.execObjectFunction = function (objectId,functionName,args) {
   
   // Pre-process function arguments in order to detect distants objects 
@@ -531,6 +550,11 @@ AsyncPuppet.prototype.convertResponseToObject = function (response) {
     return obj;
   } else if (response.type=="remote-object") {
     return localObjects[response.id];
+  } else if (response.type=="array") {
+    var list = [];
+    for(var i=0; i<response.array.length; i++) 
+      list.push(this.convertResponseToObject(response.array[i]));
+    return list;
   } else if (response.type=="null") {
     return null;
   } else {

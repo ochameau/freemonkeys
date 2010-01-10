@@ -1,12 +1,130 @@
+
 body {
-  padding: 20px; font-family: Calibri, Helvetica, Arial; 
+  padding: 20px; 
   width: 800px; height: 600px;
 }
 h1 {
   border-bottom: 1px solid #ddd; font-size:120%;
 }
-.bespin {
-  margin: 0; padding: 0; border: 0; height: 300px; 
-  border: 10px solid #ddd; 
-  -moz-border-radius: 10px; -webkit-border-radius: 10px;
+
+#panels {
+  padding: 0;
+  border: 15px solid #ddd; 
+  -moz-border-radius: 20px;
+  background-color: #ddd;
+}
+#panels-selection {
+  background-color: #ddd;
+  text-align: center;
+  font-family: verdana;
+}
+#panels-selection > *{
+  margin-left: 15px;
+  background-color: #d7d7d7;
+  border: 1px solid #ddd;
+  -moz-border-radius: 5px 5px 0 0;
+  padding: 3px 10px 0 10px;
+}
+#panels-selection > *.current {
+  border-bottom: 1px solid #eee;
+  background-color: #eee;
+}
+#panels-selection > *:hover{
+  text-decoration: underline;
+  background-color: #eee;
+  border-bottom: 1px solid #eee;
+}
+
+.panel > *:first-child {
+  -moz-border-radius: 5px 5px 0 0;
+}
+.panel > *:last-child {
+  -moz-border-radius: 0 0 5px 5px;
+}
+#panel-edit .CodeMirror-line-numbers-layer {
+  bottom: 0;
+  height: auto !important;
+  -moz-border-radius: 0 0 0 5px;
+  border: 1px solid #eee;
+}
+
+.panel .actions {
+  padding-left: 2.2em;
+  background-color: #eee;
+  height: 1.5em;
+  font-family: verdana;
+  line-height: 1.5em;
+}
+.panel .actions > * {
+  float: left;
+}
+.panel .actions > *:hover {
+  color: #00c;
+}
+
+
+.CodeMirror-line-numbers {
+  width: 2.2em;
+  color: #aaa;
+  background-color: #eee;
+  text-align: right;
+  font-size: 10pt;
+  font-family: monospace;
+  padding-top: .4em;
+  -moz-user-select: none;
+  cursor: default;
+}
+.CodeMirror-line-numbers > div {
+  padding-right: .3em;
+}
+.CodeMirror-line-numbers .pass {
+  background-color: lightgreen;
+}
+.CodeMirror-line-numbers .fail {
+  background-color: red;
+}
+.CodeMirror-line-numbers .error {
+  background-color: orange;
+}
+.CodeMirror-line-numbers .message {
+  background-color: #ddd;
+}
+
+#code-editor-container {
+  background-color: white;
+}
+
+#error-tooltip {
+  display:none; 
+  z-index:1000;
+  border: 1px solid #ddd;
+  -moz-box-shadow:0 0 10px #000; 
+  background: rgba(238,238,238,0.9);
+  color: black;
+  -moz-border-radius: 10px;
+  padding:10px 15px; 
+}
+
+.CodeMirror-wrapping {
+  width: auto !important;
+}
+
+li {
+  list-style-image: none;
+  margin:0;
+}
+li.pass, li.fail {
+  -moz-border-radius: 5px;
+  padding: 5px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  margin:5px;
+}
+li.pass {
+  background-color: lightgreen;
+  border: 1px solid green;
+}
+li.fail {
+  background-color: #FFE0E0;
+  border: 1px solid red;
 }
