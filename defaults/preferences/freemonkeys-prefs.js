@@ -14,3 +14,6 @@ pref("freemonkeys.window.x", 10);
 pref("freemonkeys.window.y", 10);
 pref("freemonkeys.window.width", 600);
 pref("freemonkeys.window.height", 400);
+
+pref("freemonkeys.paths.application", "");
+pref("freemonkeys.paths.profile", "");

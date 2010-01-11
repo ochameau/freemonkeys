@@ -700,57 +700,35 @@ screenSidebarElt : function (id,file) {
 },
 
 _currentOver:null,
-highlightOver : function (screenX, screenY) {
+highlightOver : function (screenX, screenY,elt) {
 try {
 	if (this._currentOver) {
 		this._currentOver.style.removeProperty("border");
 	}
-	var browser=this._overing;
-	var x=screenX-browser.document.documentElement.boxObject.screenX;
-	var y=screenY-browser.document.documentElement.boxObject.screenY;
-	var elt=browser.document.elementFromPoint(x,y);
-	var s="";
+  var s="";
   var iframes=[];
-  
-  var anonymousNodes = elt.ownerDocument.getAnonymousNodes(elt);
-  if (anonymousNodes && anonymousNodes.length>0) {
-    //Components.utils.reportError("Got anonymous nodes!");
-    for(var i=0; i<anonymousNodes.length; i++) {
-      var np=this.getElementPosInDoc(anonymousNodes[i]);
-      var width = anonymousNodes[i].clientWidth;
-      var height = anonymousNodes[i].clientHeight;
-      //var debug = anonymousNodes[i].tagName+" -> "+np.x+"<="+x+" && "+np.y+"<="+y+" && "+x+"<="+np.x+"+"+width+" && "+y+"<="+np.y+"+"+height;
-      if (np.x<=x && np.y<=y && x<=np.x+width && y<=np.y+height) {
-        //Components.utils.reportError("MATCH : "+debug);
-        elt = anonymousNodes[i];
-        anonymousNodes = elt.childNodes;
-        i=-1;
-        if (!anonymousNodes || anonymousNodes.length==0)
-          break;
-        continue;
-      } else {
-        //Components.utils.reportError("no match : "+debug);
-      }
-    }
-  }
+	/*
+  function isVisible(obj) {
+    if (!obj) return false;
+    if (!obj.parentNode) return false;
     
-	while(elt && elt.contentWindow) {
-		var p=this.getElementPosInDoc(elt);
-		s+=x+"x"+y;
-		x=x-p.x;
-		y=y-p.y;
-		s+=" -("+elt.tagName+":"+elt.id+"-"+p.x+"x"+p.y+")> "+x+"x"+y;
-    iframes.push(elt);
-		elt=elt.contentWindow.document.elementFromPoint(x,y);
+    var style = obj.ownerDocument.defaultView.getComputedStyle(obj, "");
+    if (style.display == 'none') return false;
+    if (style.visibility == 'hidden') return false;
+    return true;
+  }
+  
+  function elementFromPoint(doc, x, y) {
+    var elt=doc.elementFromPoint(x,y);
     var anonymousNodes = elt.ownerDocument.getAnonymousNodes(elt);
     if (anonymousNodes && anonymousNodes.length>0) {
       //Components.utils.reportError("Got anonymous nodes!");
       for(var i=0; i<anonymousNodes.length; i++) {
-        var np=this.getElementPosInDoc(anonymousNodes[i]);
+        var np=macro.getElementPosInDoc(anonymousNodes[i]);
         var width = anonymousNodes[i].clientWidth;
         var height = anonymousNodes[i].clientHeight;
         //var debug = anonymousNodes[i].tagName+" -> "+np.x+"<="+x+" && "+np.y+"<="+y+" && "+x+"<="+np.x+"+"+width+" && "+y+"<="+np.y+"+"+height;
-        if (np.x<=x && np.y<=y && x<=np.x+width && y<=np.y+height) {
+        if (np.x<=x && np.y<=y && x<=np.x+width && y<=np.y+height && isVisible(anonymousNodes[i])) {
           //Components.utils.reportError("MATCH : "+debug);
           elt = anonymousNodes[i];
           anonymousNodes = elt.childNodes;
@@ -763,8 +741,27 @@ try {
         }
       }
     }
+    return elt;
+  }
+  
+  var browser=this._overing;
+	var x=screenX-browser.document.documentElement.boxObject.screenX;
+	var y=screenY-browser.document.documentElement.boxObject.screenY;
+	var elt = elementFromPoint(browser.document, x, y);
+  
+	
+  
+	while(elt && elt.contentWindow) {
+		var p=this.getElementPosInDoc(elt);
+		s+=x+"x"+y;
+		x=x-p.x;
+		y=y-p.y;
+		s+=" -("+elt.tagName+":"+elt.id+"-"+p.x+"x"+p.y+")> "+x+"x"+y;
+    iframes.push(elt);
+		elt=elementFromPoint(elt.contentWindow.document, x, y);
 	}
-  Components.utils.reportError(s);
+  */
+  //Components.utils.reportError(s);
 	if (!elt)
 		return "no elt > "+s;
   
@@ -842,7 +839,6 @@ getNodeInfo : function (node, dontGetPreview) {
     return results.iterateNext() && !results.iterateNext();
   }
   
-  
   function getXPath(elt,rootNode) {
     var doc = elt.ownerDocument;
     
@@ -851,10 +847,20 @@ getNodeInfo : function (node, dontGetPreview) {
       return ["id('"+elt.id+"')"];
     }
     
+    // In case of an anonymous node
+    // Try to check if anonid attribute is unique
+    if (rootNode) {
+      var anonid = elt.getAttribute("anonid");
+      if (anonid) {
+        // Check that this node is unique
+        return [elt.tagName.replace(/^.+:/,"").toLowerCase()+"[@anonid='"+anonid+"']"];
+      }
+    }
+    
     var path = [];
     if (elt == doc.documentElement || elt==rootNode) {
       path = [""]; // in order to add a '/' at xpath begin (with xpath.join('/'))
-    } else if(elt.parentNode) {
+    } else if(elt.parentNode && elt.parentNode!=rootNode) {
       path = getXPath(elt.parentNode,rootNode);
     }
     
@@ -927,7 +933,11 @@ getNodeInfo : function (node, dontGetPreview) {
 		elt=elt.contentWindow.document.elementFromPoint(x,y);
 	}
   
-  var binding = node.ownerDocument.getBindingParent(node);
+  var binding = node;
+  while(binding.ownerDocument.getBindingParent(binding)) {
+    binding = binding.ownerDocument.getBindingParent(binding);
+  }
+  if (binding == node) binding = null;
   
   var obj = {
     xpath : getXPath(binding?binding:node).join('/'),
@@ -1005,7 +1015,7 @@ _overListener : function (evt) {
     this.lastX=x;
     this.lastY=y;
     var prevOver = macro._currentOver;
-    macro.highlightOver(x,y);
+    macro.highlightOver(x,y,evt.originalTarget);
     if (prevOver!=macro._currentOver) {
       macro.updateNodeInfo(macro._currentOver);
     }
@@ -1061,7 +1071,8 @@ updateNodeInfo : function (node) {
   var info = this.getNodeInfo(node);
   var html = "";
   html += '<div style="font-weight: bold; font-size: 1em; padding-bottom: 10px;">'+info.xpath+'</div>';
-  html += '<div style="font-size: 1em; padding-bottom: 10px;">anonymous: '+info.binding+'</div>';
+  if (info.binding)
+    html += '<div style="font-size: 1em; padding-bottom: 10px;">anonymous: '+info.binding+'</div>';
   html += '<div style="text-align: center">';
   html += '<img src="'+info.preview.data+'" style="max-width:350px; max-height: 150px;border: 1px solid #ddd; -moz-box-shadow:0 0 10px #000; " width="'+info.preview.width+'" height="'+info.preview.height+'" />'
   html += '</div>';

@@ -32,40 +32,35 @@
 
 <div id="panels">
   <div id="panels-selection">
-    <a href="#" onclick="gFreemonkeys.switchTo('')" class="current">Edit</a>
-    <a href="#" onclick="gFreemonkeys.switchTo('')">Settings</a>
-    <a href="#" onclick="gFreemonkeys.switchTo('')">Report</a>
+    <span id="panel-edit-button" onclick="gFreemonkeys.switchTo('edit')" class="current">Edit</span>
+    <span id="panel-settings-button" onclick="gFreemonkeys.switchTo('settings')">Settings</span>
+    <span id="panel-report-button" style="display:none" onclick="gFreemonkeys.switchTo('report')">Report</span>
   </div>
   
   <div id="panel-edit" class="panel current">
     <div class="actions">
       <a href="#" onclick="gFreemonkeys.execute()">&raquo; execute</a>
-      -
       <a href="#" onclick="gFreemonkeys.selectNode()">&raquo; select node</a>
     </div>
     <div id="code-editor-container">
       <div id="error-tooltip">&nbsp;</div>
     </div>
-    <!--
-    <div style="min-height:400px" id="editor" class="bespin" data-bespinoptions='{ "settings": { "strictlines": true }, "stealFocus": false }'></div>
-    -->
   </div>
   
-  <ul id="panel-report" class="panel" style="display:none">
+  <ul id="panel-report" class="panel">
     <li>empty!</li>
   </ul>
   
-  <div id="panel-settings" class="panel" style="display:none;">
+  <div id="panel-settings" class="panel" onshow="gFreemonkeys.refreshSettings()">
     <p>
-      <h3>Firefox installations :</h3>
-      <span>default 3.5 :</span><span class="firefox-path" />
-      <span>3.0 :</span><span class="firefox-path" />
-      <span>Minefield :</span><span class="firefox-path" />
+      <h3>Application binary path :</h3>
+      <span class="change-path" onclick="gFreemonkeys.selectApplication()">select</span>
+      <span id="application-path"></span>
     </p>
     <p>
-      <h3>Profiles :</h3>
-      <span>default :</span><span class="profile-path" />
-      <span>second :</span><span class="profile-path" />
+      <h3>Profile :</h3>
+      <span class="change-path" onclick="gFreemonkeys.selectProfile()">select</span>
+      <span id="profile-path"></span>
     </p>
   </div>
   

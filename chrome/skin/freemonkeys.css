@@ -17,6 +17,8 @@ h1 {
   background-color: #ddd;
   text-align: center;
   font-family: verdana;
+  -moz-user-select: none;
+  -moz-user-focus: ignore;
 }
 #panels-selection > *{
   margin-left: 15px;
@@ -24,44 +26,58 @@ h1 {
   border: 1px solid #ddd;
   -moz-border-radius: 5px 5px 0 0;
   padding: 3px 10px 0 10px;
+  cursor: pointer;
 }
 #panels-selection > *.current {
   border-bottom: 1px solid #eee;
   background-color: #eee;
 }
-#panels-selection > *:hover{
+#panels-selection > span:hover{
   text-decoration: underline;
   background-color: #eee;
   border-bottom: 1px solid #eee;
 }
 
+.panel {
+  display: none;
+  background-color: #eee;
+  -moz-border-radius: 5px;
+  border: 1px solid #eee;
+  margin: 0;
+}
+.panel.current {
+  display: block;
+}
 .panel > *:first-child {
   -moz-border-radius: 5px 5px 0 0;
 }
 .panel > *:last-child {
   -moz-border-radius: 0 0 5px 5px;
 }
-#panel-edit .CodeMirror-line-numbers-layer {
-  bottom: 0;
-  height: auto !important;
-  -moz-border-radius: 0 0 0 5px;
-  border: 1px solid #eee;
-}
 
 .panel .actions {
   padding-left: 2.2em;
-  background-color: #eee;
   height: 1.5em;
   font-family: verdana;
   line-height: 1.5em;
 }
 .panel .actions > * {
   float: left;
+  padding-right: 20px;
 }
 .panel .actions > *:hover {
   color: #00c;
 }
 
+/******************************/
+/*   EDIT PANEL               */
+
+#panel-edit .CodeMirror-line-numbers-layer {
+  bottom: 0;
+  height: auto !important;
+  -moz-border-radius: 0 0 0 5px;
+  border: 1px solid #eee;
+}
 
 .CodeMirror-line-numbers {
   width: 2.2em;
@@ -109,22 +125,46 @@ h1 {
   width: auto !important;
 }
 
-li {
-  list-style-image: none;
+
+/******************************/
+/*   REPORT PANEL             */
+#panel-report {
+  padding: 10px;
+}
+
+#panel-report li {
+  list-style-type: none;
   margin:0;
 }
-li.pass, li.fail {
+#panel-report li.pass,#panel-report li.fail {
   -moz-border-radius: 5px;
   padding: 5px;
   padding-top: 1px;
   padding-bottom: 1px;
   margin:5px;
 }
-li.pass {
+#panel-report li.pass {
   background-color: lightgreen;
   border: 1px solid green;
 }
-li.fail {
+#panel-report li.fail {
   background-color: #FFE0E0;
   border: 1px solid red;
+}
+
+
+/******************************/
+/*   SETTINGS PANEL           */
+
+#panel-settings {
+  padding: 10px;
+}
+
+.change-path {
+  cursor: pointer;
+  padding-left: 20px;
+  padding-right: 20px;
+}
+span.change-path:hover {
+  text-decoration: underline;
 }

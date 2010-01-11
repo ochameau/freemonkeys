@@ -23,7 +23,7 @@ var gFreemonkeys = {
   get prefs () {
     delete this.prefs;
     var prefs = Components.classes["@mozilla.org/preferences-service;1"].getService(Components.interfaces.nsIPrefService);
-    this.prefs = prefs.getBranch("extensions.yoono.profiles-selector.");
+    this.prefs = prefs.getBranch("freemonkeys.");
     return this.prefs;
   },/*
   get editor () {
@@ -35,11 +35,42 @@ var gFreemonkeys = {
     delete this.report;
     this.report = document.getElementById("panel-report");
     return this.report;
+  },
+  get defaultProfilePath () {
+    return this.prefs.getCharPref("paths.profile");
+  },
+  set defaultProfilePath (v) {
+    this.prefs.setCharPref("paths.profile",v);
+    return v;
+  },
+  get defaultApplicationPath () {
+    return this.prefs.getCharPref("paths.application");
+  },
+  set defaultApplicationPath (v) {
+    this.prefs.setCharPref("paths.application",v);
+    return v;
   }
 };
 
-gFreemonkeys.switchTo = function (panel) {
+gFreemonkeys.switchTo = function (panelName) {
+  var panels = document.getElementById("panels").getElementsByClassName("panel");
+  for(var i=0; i<panels.length; i++) {
+    panels[i].className = "panel";
+  }
+  var buttons = document.getElementById("panels-selection").childNodes;
+  for(var i=0; i<buttons.length; i++) {
+    buttons[i].className = "";
+  }
   
+  var panel = document.getElementById("panel-"+panelName);
+  panel.className += " current";
+  
+  var button = document.getElementById("panel-"+panelName+"-button");
+  button.className = "current";
+  button.style.display="";
+  
+  var onshow = panel.getAttribute("onshow");
+  eval(onshow);
 }
 
 gFreemonkeys.print = function (classname, type, msg) {
@@ -101,18 +132,12 @@ gFreemonkeys.execute = function () {
     }
   }
   
- 
-  
-  this.monkey = FreemonkeysZoo.execute(env.application.default, env.profile.default, gFreemonkeys.editor.getCode(), listener);
-}
-var env = {
-  application : {
-    default : "C:\\Program Files\\Mozilla Firefox 3 en\\firefox.exe"
-  },
-  profile : {
-    default : "C:\\Documents and Settings\\Administrateur\\Bureau\\freemonkeys\\profiles\\empty"
+  try {
+    this.monkey = FreemonkeysZoo.execute(gFreemonkeys.defaultApplicationPath, gFreemonkeys.defaultProfilePath, gFreemonkeys.editor.getCode(), listener);
+  } catch(e) {
+    listener("exception",-1,{message:"Internal error : "+e,e:e});
   }
-};
+}
 
 gFreemonkeys.selectNode = function () {
   window.minimize();
@@ -126,9 +151,15 @@ gFreemonkeys.selectNode = function () {
       .getInterface(Components.interfaces.nsIXULWindow);
     xulwin.zLevel = xulwin.highestZ;
     window.focus();
+    var content = "\n";
+    content += 'var element = elements.xpath(win, "'+node.xpath.replace('"','\\"')+'"';
+    if (node.binding)
+      content += ', "'+node.binding.replace('"','\\"')+'"';
+    content += ');\n';
+    gFreemonkeys.editor.insertIntoLine(gFreemonkeys.editor.currentLine,0, content);
     //inspect([win,frame,node]);
   }
-  FreemonkeysZoo.selectNode(env.application.default, env.profile.default, onClick);
+  FreemonkeysZoo.selectNode(gFreemonkeys.defaultApplicationPath, gFreemonkeys.defaultProfilePath, onClick);
 }
 
 gFreemonkeys.getLastSessionFile = function () {
@@ -189,6 +220,49 @@ gFreemonkeys.restoreWindowParams = function () {
   window.screenY = this.prefs.getIntPref("window.y");
   window.outerWidth = this.prefs.getIntPref("window.width");
   window.outerHeight = this.prefs.getIntPref("window.height");
+}
+
+gFreemonkeys.refreshSettings = function () {
+  var application = document.getElementById("application-path");
+  var profile = document.getElementById("profile-path");
+  if (this.defaultApplicationPath)
+    application.innerHTML = this.defaultApplicationPath;
+  else
+    application.innerHTML = "<strong>Need to be set!</strong>";
+  if (this.defaultProfilePath)
+    profile.innerHTML = this.defaultProfilePath;
+  else
+    profile.innerHTML = "<strong>Need to be set!</strong>";
+}
+
+gFreemonkeys.selectProfile = function () {
+  var nsIFilePicker = Components.interfaces.nsIFilePicker;
+  var fp = Components.classes["@mozilla.org/filepicker;1"].createInstance(nsIFilePicker);
+  fp.init(window, "Profile folder", nsIFilePicker.modeGetFolder);
+  //fp.appendFilter("Freemonkey Test set Files","*.fmt");
+  //fp.appendFilters(nsIFilePicker.filterAll);
+  
+  var rv = fp.show();
+  if (rv == nsIFilePicker.returnOK) {
+    var file = fp.file;
+    this.defaultProfilePath = file.path;
+    this.refreshSettings();
+  }
+}
+
+gFreemonkeys.selectApplication = function () {
+  var nsIFilePicker = Components.interfaces.nsIFilePicker;
+  var fp = Components.classes["@mozilla.org/filepicker;1"].createInstance(nsIFilePicker);
+  fp.init(window, "Application binary", nsIFilePicker.modeOpen);
+  fp.appendFilter("Application binary","*.exe");
+  fp.appendFilters(nsIFilePicker.filterAll);
+  
+  var rv = fp.show();
+  if (rv == nsIFilePicker.returnOK) {
+    var file = fp.file;
+    this.defaultApplicationPath = file.path;
+    this.refreshSettings();
+  }
 }
 
 gFreemonkeys.initEditor = function () {
