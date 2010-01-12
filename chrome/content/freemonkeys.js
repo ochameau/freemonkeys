@@ -170,6 +170,11 @@ gFreemonkeys.execute = function () {
   }
   
   try {
+    if (!gFreemonkeys.defaultApplicationPath)
+      return listener("error",-1,"Application binary is not set, please go to the settings panel!");
+    if (!gFreemonkeys.defaultProfilePath)
+      return listener("error",-1,"Profile path is not set, please go to the settings panel!");
+    
     FreemonkeysZoo.execute(gFreemonkeys.defaultApplicationPath, gFreemonkeys.defaultProfilePath, gFreemonkeys.editor.getCode(), listener);
   } catch(e) {
     listener("exception",-1,{message:"Internal error : "+e,e:e});

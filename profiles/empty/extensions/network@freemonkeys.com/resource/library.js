@@ -15,7 +15,6 @@ function inspect(obj) {
 
 Components.utils.import("resource://fm-network/moz-puppet.js");
 
-
 var screenshotId=1;
 
 var macro = {};
@@ -263,7 +262,7 @@ macro.execute = function (code, listener) {
       function () {
         var doc = win.document.wrappedJSObject;
         // XPathResult = Components.interfaces.nsIDOMXPathResult
-        var results = doc.evaluate(xpath,doc,null,XPathResult.ANY_TYPE, null);
+        var results = doc.evaluate(xpath,doc,null,Components.interfaces.nsIDOMXPathResult.ANY_TYPE, null);
         return results.iterateNext();
       });
   }
@@ -590,7 +589,7 @@ macro.rectToCanvas = function (wnd, x,y,w,h) {
 	if (!h)
 		h=windowHeight;
 	
-  var canvas = document.createElementNS("http://www.w3.org/1999/xhtml","canvas");
+  var canvas = hiddenWindow.document.createElementNS("http://www.w3.org/1999/xhtml","canvas");
   canvas.width = w;
   canvas.height = h;
   
@@ -702,7 +701,7 @@ macro.getNodeInfo = function (node, dontGetPreview) {
     return null;
   
   function isUniqueId(doc,id) {
-    var results = doc.evaluate('id("'+id+'")',doc,null,XPathResult.ANY_TYPE, null);
+    var results = doc.evaluate('id("'+id+'")',doc,null,Components.interfaces.nsIDOMXPathResult.ANY_TYPE, null);
     //alert(results.iterateNext()+" && "+results.iterateNext());
     return results.iterateNext() && !results.iterateNext();
   }
@@ -923,7 +922,7 @@ macro.startOvering = function (win,callback) {
       event.preventDefault();
       win.document.removeEventListener("click",arguments.callee,true);
       _self.stopOvering();
-      callback(_self.getWindowInfo(win), _self.getFrameInfo(_self._currentOver.ownerDocument.defaultView), _self.getNodeInfo(_self._currentOver));
+      callback(null, null, _self.getNodeInfo(_self._currentOver));
     },true);
   
   infoWin = hiddenWindow.open('data:text/html;charset=utf-8,',"node-info","resizable=no,scrollbars=no,status=no,width=1,height=1,popup=yes");
@@ -946,6 +945,11 @@ macro.updateNodeInfo = function (node) {
   html += '<img src="'+info.preview.data+'" style="max-width:350px; max-height: 150px;border: 1px solid #ddd; -moz-box-shadow:0 0 10px #000; " width="'+info.preview.width+'" height="'+info.preview.height+'" />'
   html += '</div>';
   this.infoWin.document.body.innerHTML=html;
+}
+
+macro.getNavigatorWnd = function () {
+  var wm = Components.classes["@mozilla.org/appshell/window-mediator;1"].getService(Components.interfaces.nsIWindowMediator);
+  return wm.getMostRecentWindow("navigator:browser");
 }
 
 addLocalObject("macro",macro);

@@ -61,64 +61,8 @@ const myAppHandler = {
   
   handle : function clh_handle(cmdLine)
   {
-    if (this.alreadyOpened) 
-      return dump("Already opened!\n");
-    dump("Hop\n");
-    this.alreadyOpened = true;
-    try {
-      var testFile = cmdLine.handleFlagWithParam("execute", false);
-      if (testFile) {
-        dump("Execute : "+testFile+"\n");
-        testFile = cmdLine.resolveFile(testFile);
-        if (!testFile.exists())
-          return dump("Unable to find test file at : "+testFile.path+"\n");
-        var resultTarget = cmdLine.handleFlagWithParam("out", false);
-        if (resultTarget) {
-          resultTarget = cmdLine.resolveFile(resultTarget);
-        } else {
-          resultTarget = testFile.parent;
-          resultTarget.append(testFile.leafName.replace(/\..+/,".fmr"));
-        }
-        if (resultTarget.exists()) {
-          Components.utils.reportError("Result file '"+resultTarget.path+"' already exists!\n");
-          return dump("Result file '"+resultTarget.path+"' already exists!\n");
-        }
-        
-        Components.utils.import("resource://xul-macro/actions.js");
-        
-        dump("Execute : "+testFile.path+"\nSave results in : "+resultTarget.path+"\n");
-        Actions.executeFile(testFile,resultTarget, function () {
-              dump("try to quit\n");
-              appStartup.exitLastWindowClosingSurvivalArea();
-              try {
-                dump("closing firefox session\n");
-                Actions.quit();
-              } catch(e) {
-                dump("Exception while closing firefox sessions : "+e+"\n");
-              }
-          });
-        
-      }
-    }
-    catch (e) {
-      dump("Execute file error : "+e+"\n"+e.stack+"\n");
-      appStartup.exitLastWindowClosingSurvivalArea();
-    }
+    //var command = cmdLine.handleFlagWithParam("command", false);
     
-
-    try {
-      if (cmdLine.handleFlag("nogui", false)) {
-        dump("NO GUI!\n");
-        //cmdLine.preventDefault = true;
-        appStartup.enterLastWindowClosingSurvivalArea();
-      } else {
-        dump("With GUI\n");
-        openWindow("chrome://freemonkeys/content/freemonkeys.html",null);
-        //cmdLine.preventDefault = true;
-      }
-    } catch(e) {
-      dump("Cmd line error : "+e+"\n");
-    }
   },
 
   // CHANGEME: change the help info as appropriate, but

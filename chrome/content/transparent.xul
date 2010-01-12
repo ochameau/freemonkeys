@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+
+<window hidechrome="true"
+  id="freemonkeys-transparent-window" title="Freemonkeys" 
+  xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+  
+  <iframe id="transparent-iframe" src="chrome://freemonkeys/content/freemonkeys.html" flex="1" />
+  
+</window>
