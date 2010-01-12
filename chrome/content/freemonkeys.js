@@ -124,6 +124,15 @@ gFreemonkeys.execute = function () {
         position: "center right",
         offset: [-2, 10]
       });
+    } else if (type=="screenshot") {
+      var lineElement = gFreemonkeys.linesContainer.childNodes[line-1];
+      lineElement.className="screenshot";
+      lineElement.setAttribute("title","<strong>Screenshot :</strong><br/> <img src=\""+res+"\" />");
+      $(lineElement).tooltip({
+        tip : '#error-tooltip',
+        position: "center right",
+        offset: [-2, 10]
+      });
     } else if (typeof res=="object") {
       gFreemonkeys.print("debug",type,(res.line?res.line:"?")+" - "+res.toSource());
       inspect(res);

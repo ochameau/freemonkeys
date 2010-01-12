@@ -105,6 +105,9 @@ h1 {
 .CodeMirror-line-numbers .message {
   background-color: #ddd;
 }
+.CodeMirror-line-numbers .screenshot {
+  background-color: #dde;
+}
 
 #code-editor-container {
   background-color: white;

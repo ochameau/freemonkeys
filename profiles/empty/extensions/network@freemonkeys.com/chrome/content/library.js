@@ -24,6 +24,10 @@ execute : function (code, listener) {
     function MonkeyTab(gBrowser, tab) {
       var linkedBrowser = tab.linkedBrowser;
       var webNavigation = linkedBrowser.webNavigation;
+      
+      this.__defineGetter__("document", function () {
+        return linkedBrowser.contentDocument;
+      });
       this.open = function (url) {
         linkedBrowser.loadURI(url,null,null);
       }
@@ -50,7 +54,9 @@ execute : function (code, listener) {
     function MonkeyWindow(win) {
       this.win = win;
       var gBrowser = win.gBrowser;
-      
+      this.__defineGetter__("document", function () {
+        return win.document;
+      });
       this.tabs = {
         new : function (url, doNotSelect) {
           if (!url) url="about:blank";
@@ -150,14 +156,119 @@ execute : function (code, listener) {
     }
   };
   
-  garden.elements = {
-    xpath : function (win, xpath) {
+  garden.elements = {}
+  
+  garden.elements.MonkeyElement = 
+    function MonkeyElement(getter) {
+      this._cache = null;
+      this.waitForNode = function () {
+        if (this._cache) return this._cache;
+        
+        var start = new Date().getTime();
+        
+        var node = false;
+        var exception;
+        
+        var self=this;
+        function wait() {
+          try {
+            node = self.getNode();
+          } catch(e) {
+            exception = e;
+          }
+        }
+        
+        var timeoutInterval = window.setInterval(wait, 100);
+        
+        var thread = Components.classes["@mozilla.org/thread-manager;1"]
+                  .getService()
+                  .currentThread;
+
+        while(!node && new Date().getTime()-start < 5000) {
+          thread.processNextEvent(true);
+        }
+        
+        window.clearInterval(timeoutInterval);
+        
+        if (node)
+          return node;
+        if (exception)
+          throw exception;
+        else
+          throw new Error("Unable to found this node");
+      }
       
-    },
-    selector : function (win, selector) {
+      this.getNode = function () {
+        try {
+          if (this._cache) return this._cache;
+          this._cache = getter();
+          if (!this._cache)
+            throw new Error("Unable to found this node");
+          return this._cache;
+        } catch(e) {
+          throw new Error("Unable to retrieve node : "+e);
+        }
+      }
       
+      this.getBoxobject = function () {
+        var elt = this.waitForNode();
+        var boxobject = null;
+        // html case
+        if (elt.ownerDocument && elt.ownerDocument.getBoxObjectFor)
+          boxobject=elt.ownerDocument.getBoxObjectFor(elt);
+        // xul case
+        if (!boxobject)
+          boxobject=elt.boxObject;
+        // problem case
+        if (!boxobject) {
+          dump("unable to get easily boxobject : "+elt.tagName);
+          var docshell = elt.QueryInterface(Ci.nsIInterfaceRequestor)
+                               .getInterface(Ci.nsIWebNavigation)
+                               .QueryInterface(Ci.nsIDocShell);
+          if (!docshell.chromeEventHandler)
+            inspect(docshell);
+          var boxobject = docshell.chromeEventHandler.boxObject;
+          if (boxobject) {
+            dump("getboxobject with doshell xul : "+docshell.chromeEventHandler.tagName);
+          }
+          if (!boxobject) {
+            dump("get boxobject with docshell html : "+docshell.chromeEventHandler.tagName+"/"+docshell.chromeEventHandler.ownerDocument.tagName);
+            boxobject = docshell.chromeEventHandler.ownerDocument.getBoxObjectFor(docshell.chromeEventHandler);
+          }
+          if (!boxobject)
+            dump("Unable to get boxobject!!!");
+        }
+        return boxobject;
+      }
+      
+      this.screenshot = function () {
+        var node = this.waitForNode();
+        var bo = this.getBoxobject();
+        var canvas = macro.rectToCanvas(node.ownerDocument.defaultView,bo.x,bo.y,bo.width,bo.height);
+        var data = canvas.toDataURL("image/png", "");
+        listener("screenshot",Components.stack.caller.lineNumber+1,data);
+        return data;
+      }
     }
-  };
+  
+  garden.elements.xpath = function (win, xpath, anonymousXPath) {
+    return new garden.elements.MonkeyElement(
+      function () {
+        var doc = win.document.wrappedJSObject;
+        // XPathResult = Components.interfaces.nsIDOMXPathResult
+        var results = doc.evaluate(xpath,doc,null,XPathResult.ANY_TYPE, null);
+        return results.iterateNext();
+      });
+  }
+  
+  garden.elements.selector = function (win, selector) {
+    
+  }
+  
+  garden.elements.screenshot = function (element) {
+    
+  }
+  
   
   try {
     var result = Components.utils.evalInSandbox(code, garden, "1.8", "test-buffer", 0);
