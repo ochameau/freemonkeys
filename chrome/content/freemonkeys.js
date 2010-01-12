@@ -316,11 +316,16 @@ gFreemonkeys.selectApplication = function () {
   }
 }
 
+window.addEventListener("resize",function () {
+  document.getElementById("panels").style.height=(window.innerHeight-30)+"px";
+  document.getElementById("code-editor-container").style.height=(window.innerHeight-70)+"px";
+},false);
+
 gFreemonkeys.initEditor = function () {
   var container = document.getElementById("code-editor-container");
   this.editor = new CodeMirror(container, {
     width: '100%',
-    height: "350px",
+    height: "auto",
     parserfile: ["tokenizejavascript.js", "parsejavascript.js"],
     stylesheet: "css/jscolors.css",
     path: "codemirror/",

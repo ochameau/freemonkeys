@@ -1,4 +1,4 @@
-const EXPORTED_SYMBOLS = ["PuppetConnexion"];
+const EXPORTED_SYMBOLS = ["PuppetConnexion","addLocalObject"];
 
 const hiddenWindow = Components.classes["@mozilla.org/appshell/appShellService;1"]
         .getService(Components.interfaces.nsIAppShellService)

@@ -1,26 +1,28 @@
-
 body {
   padding: 0; 
   margin: 0;
-  width: 100%; height: 100%;
+  width: 100%;
 }
-h1 {
-  border-bottom: 1px solid #ddd; font-size:120%;
-}
+
+
 #debug-box {
-  margin-right: 10px;
+  position: absolute;
+  right: 0; bottom: 0;
+  opacity: 0.6;
+  z-index: 3;
+  margin-right: 20px;
 }
 #debug-box > * {
   display: inline-block;
   background: #F0F0F0;
   border: 1px solid gray;
   -moz-border-radius: 5px;
-  -moz-opacity: 0.8;
   padding: 2px 5px;
   cursor: pointer;
 }
+
+
 #panels {
-  margin: 20px;
   border: 15px solid #ddd; 
   -moz-border-radius: 20px;
   background-color: #ddd;
@@ -149,6 +151,8 @@ h1 {
 }
 #report-list {
   padding: 0px;
+  font-family: verdana;
+  font-size: 10px;
 }
 #panel-report li {
   list-style-type: none;

@@ -7,7 +7,7 @@ const hiddenWindow = Components.classes["@mozilla.org/appshell/appShellService;1
 
 const Application = {}
 
-Application.start = function (binary, profile) {
+Application.start = function (binary, profile, port) {
     
     var file = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
     file.initWithPath(binary);
@@ -21,7 +21,7 @@ Application.start = function (binary, profile) {
     process.init(file);
     
     // Run the process.
-    var args = ["-no-remote","-jsconsole", "-console", "-profile", profile];
+    var args = ["-no-remote","-jsconsole", "-console", "-profile", profile, "-fmport", port];
     process.run(false, args, args.length);
     
 }
@@ -213,10 +213,11 @@ FreemonkeysZoo.execute = function (application, profile, code, listener) {
       return onMonkeyAlive(FreemonkeysZoo._pens[application][profile]);
     
     listener("monkey",-1,"start a new one");
+    var port = gPortNumber++;
     
-    Application.start(application, profile);
+    Application.start(application, profile, port);
     
-    Application.connect("localhost", gPortNumber, profile, 
+    Application.connect("localhost", port, profile, 
       function (success, res) {
         if (success) {
           if (!FreemonkeysZoo._pens[application])
