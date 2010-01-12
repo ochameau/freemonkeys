@@ -17,24 +17,33 @@ function aboutConfig() {
   window.open('about:config', 'about_config', 'chrome,dependent,width=700,height=500');
 }
 
+function restart() {
+  var appStartup = Components.classes['@mozilla.org/toolkit/app-startup;1'].
+      getService(Components.interfaces.nsIAppStartup);
+  appStartup.quit(Components.interfaces.nsIAppStartup.eAttemptQuit |
+                  Components.interfaces.nsIAppStartup.eRestart);
+}
+
 Components.utils.import("resource://freemonkeys/freemonkeys.js");
 
 var gFreemonkeys = {
+  
+  get report () {
+    delete this.report;
+    this.report = document.getElementById("panel-report");
+    return this.report;
+  },
+  get reportList () {
+    delete this.reportList;
+    this.reportList = document.getElementById("report-list");
+    return this.reportList;
+  },
+  
   get prefs () {
     delete this.prefs;
     var prefs = Components.classes["@mozilla.org/preferences-service;1"].getService(Components.interfaces.nsIPrefService);
     this.prefs = prefs.getBranch("freemonkeys.");
     return this.prefs;
-  },/*
-  get editor () {
-    delete this.editor;
-    this.editor = document.getElementById("editor").bespin;
-    return this.editor;
-  },*/
-  get report () {
-    delete this.report;
-    this.report = document.getElementById("panel-report");
-    return this.report;
   },
   get defaultProfilePath () {
     return this.prefs.getCharPref("paths.profile");
@@ -49,6 +58,16 @@ var gFreemonkeys = {
   set defaultApplicationPath (v) {
     this.prefs.setCharPref("paths.application",v);
     return v;
+  },
+  settings : {
+    get switchToReport () {
+      return gFreemonkeys.prefs.getBoolPref("settings.auto-switch-to-report");
+    },
+    set switchToReport (v) {
+      //Components.utils.reportError(v);
+      gFreemonkeys.prefs.setBoolPref("settings.auto-switch-to-report",v);
+      return v;
+    }
   }
 };
 
@@ -67,27 +86,36 @@ gFreemonkeys.switchTo = function (panelName) {
   
   var button = document.getElementById("panel-"+panelName+"-button");
   button.className = "current";
-  button.style.display="";
   
   var onshow = panel.getAttribute("onshow");
   eval(onshow);
 }
 
 gFreemonkeys.print = function (classname, type, msg) {
-  Components.utils.reportError(classname+","+type+" -- "+msg);
-  this.report.innerHTML += '<li class="'+classname+'">'+type+" : "+msg+"</li>";
+  //Components.utils.reportError(classname+","+type+" -- "+msg);
+  this.reportList.innerHTML += '<li class="'+classname+'">'+type+" : "+msg+"</li>";
 }
 gFreemonkeys.cleanReport = function () {
-  this.report.innerHTML = "";
+  this.reportList.innerHTML = "";
   var c = gFreemonkeys.linesContainer;
-  for(var i=0; i<c.childNodes.length; i++)
+  c.innerHTML=""+c.innerHTML.replace(/class="[^"]+"/g,"");
+  return;
+  for(var i=0; i<c.childNodes.length; i++) {
     c.childNodes[i].className="";
+    // Hack to disable tooltip
+    $(c.childNodes[i]).unbind('mouseover');
+    $(c.childNodes[i]).unbind('mouseout');
+  }
+  $.tools.tooltip.resetInstances();
 }
 
 
 gFreemonkeys.execute = function () {
   gFreemonkeys.cleanReport();
-  gFreemonkeys.switchTo("report");
+  if (gFreemonkeys.settings.switchToReport)
+    gFreemonkeys.switchTo("report");
+  var button = document.getElementById("panel-report-button");
+  button.style.display="";
   function listener(type, line, res) {
     if (type=="assert-pass" || type=="assert-fail") {
       var msg="line "+line+": ";
@@ -142,7 +170,7 @@ gFreemonkeys.execute = function () {
   }
   
   try {
-    this.monkey = FreemonkeysZoo.execute(gFreemonkeys.defaultApplicationPath, gFreemonkeys.defaultProfilePath, gFreemonkeys.editor.getCode(), listener);
+    FreemonkeysZoo.execute(gFreemonkeys.defaultApplicationPath, gFreemonkeys.defaultProfilePath, gFreemonkeys.editor.getCode(), listener);
   } catch(e) {
     listener("exception",-1,{message:"Internal error : "+e,e:e});
   }
@@ -169,6 +197,10 @@ gFreemonkeys.selectNode = function () {
     //inspect([win,frame,node]);
   }
   FreemonkeysZoo.selectNode(gFreemonkeys.defaultApplicationPath, gFreemonkeys.defaultProfilePath, onClick);
+}
+
+gFreemonkeys.freeTheMonkey = function () {
+  FreemonkeysZoo.free(gFreemonkeys.defaultApplicationPath, gFreemonkeys.defaultProfilePath);
 }
 
 gFreemonkeys.getLastSessionFile = function () {
@@ -242,6 +274,16 @@ gFreemonkeys.refreshSettings = function () {
     profile.innerHTML = this.defaultProfilePath;
   else
     profile.innerHTML = "<strong>Need to be set!</strong>";
+  var switchToReport = document.getElementById("auto-switch-to-report");
+  if (this.settings.switchToReport)
+    switchToReport.setAttribute("checked","true");
+  else if (switchToReport.hasAttribute("checked"))
+    switchToReport.removeAttribute("checked");
+}
+
+gFreemonkeys.toggleSwitchToReport = function () {
+  gFreemonkeys.settings.switchToReport = !gFreemonkeys.settings.switchToReport;
+  this.refreshSettings();
 }
 
 gFreemonkeys.selectProfile = function () {

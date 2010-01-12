@@ -17,3 +17,5 @@ pref("freemonkeys.window.height", 400);
 
 pref("freemonkeys.paths.application", "");
 pref("freemonkeys.paths.profile", "");
+
+pref("freemonkeys.settings.auto-switch-to-report", true);

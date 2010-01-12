@@ -187,6 +187,14 @@ FreemonkeysZoo.freeThemAll = function () {
   }
 }
 
+FreemonkeysZoo.free = function (application, profile) {
+  var monkey = this._pens[application][profile];
+  if (!monkey) return;
+  monkey.syncMacro.quit();
+  monkey.puppet.close();
+  delete this._pens[application][profile];
+}
+
 FreemonkeysZoo.selectNode = function (application, profile, onClick) {
   var monkey = FreemonkeysZoo._pens[application][profile];
   if (!monkey) return;
@@ -208,7 +216,7 @@ FreemonkeysZoo.execute = function (application, profile, code, listener) {
     
     Application.start(application, profile);
     
-    Application.connect("localhost", gPortNumber++, profile, 
+    Application.connect("localhost", gPortNumber, profile, 
       function (success, res) {
         if (success) {
           if (!FreemonkeysZoo._pens[application])

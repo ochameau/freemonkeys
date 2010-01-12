@@ -1,14 +1,26 @@
 
 body {
-  padding: 20px; 
-  width: 800px; height: 600px;
+  padding: 0; 
+  margin: 0;
+  width: 100%; height: 100%;
 }
 h1 {
   border-bottom: 1px solid #ddd; font-size:120%;
 }
-
+#debug-box {
+  margin-right: 10px;
+}
+#debug-box > * {
+  display: inline-block;
+  background: #F0F0F0;
+  border: 1px solid gray;
+  -moz-border-radius: 5px;
+  -moz-opacity: 0.8;
+  padding: 2px 5px;
+  cursor: pointer;
+}
 #panels {
-  padding: 0;
+  margin: 20px;
   border: 15px solid #ddd; 
   -moz-border-radius: 20px;
   background-color: #ddd;
@@ -64,6 +76,7 @@ h1 {
 .panel .actions > * {
   float: left;
   padding-right: 20px;
+  cursor: pointer;
 }
 .panel .actions > *:hover {
   color: #00c;
@@ -134,7 +147,9 @@ h1 {
 #panel-report {
   padding: 10px;
 }
-
+#report-list {
+  padding: 0px;
+}
 #panel-report li {
   list-style-type: none;
   margin:0;

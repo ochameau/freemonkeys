@@ -304,7 +304,8 @@ var CodeMirror = (function(){
           }
           // While there are un-processed number DIVs, or the scroller is smaller than the frame...
           var target = 50 + Math.max(body.offsetHeight, frame.offsetHeight);
-          while (lineNum || scroller.offsetHeight < target) addNum(next++);
+          while (lineNum || (scroller.offsetHeight < target && body.offsetHeight>0))
+            addNum(next++);
           doScroll();
         }
         function start() {

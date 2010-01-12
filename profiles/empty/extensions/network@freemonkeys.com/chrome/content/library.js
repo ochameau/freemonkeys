@@ -274,8 +274,8 @@ execute : function (code, listener) {
     var result = Components.utils.evalInSandbox(code, garden, "1.8", "test-buffer", 0);
   } catch(e) {
     var line;
-    if (e.location) {
-      var s=e.location;
+    if (e.location || (e.fileName && e.lineNumber)) {
+      var s=e.location || {filename:e.fileName,lineNumber:e.lineNumber};
       while(s.filename!="test-buffer" && s.caller) {
         Components.utils.reportError("stack : "+s);
         s = s.caller;
