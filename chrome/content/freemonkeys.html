@@ -38,7 +38,7 @@
       <span onclick="gFreemonkeys.freeTheMonkey()">&raquo; free the monkey</span>
     </div>
     <div id="code-editor-container">
-      <div id="error-tooltip">&nbsp;</div>
+      <div id="line-tooltip">&nbsp;</div>
     </div>
   </div>
   
@@ -54,7 +54,7 @@
   <div id="panel-settings" class="panel" onshow="gFreemonkeys.refreshSettings()">
     <p>
       <h3>Execution settings:</h3>
-      <input type="checkbox" id="auto-switch-to-report" checked="true" onclick="gFreemonkeys.toggleSwitchToReport()" /> Automatically switch to report on execution <br/>
+      <input type="checkbox" id="auto-switch-to-report" checked="true" onclick="gFreemonkeys.toggleSwitchToReport()" /><span onclick="gFreemonkeys.toggleSwitchToReport()"> Automatically switch to report on execution </span><br/>
     </p>
     <p>
       <h3>Application binary path :</h3>

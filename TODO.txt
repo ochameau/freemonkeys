@@ -1,0 +1,9 @@
+- Move network extension out of profile and replace it with a link
+- add two options : 
+  * use an empty profile
+  * use specified profile but do a copy before using it (to keep it clean)
+- handle exceptions on xpath fail
+- implements selector
+- add option to show timestamp for each assert time
+- add windows info in selector popup and/or add "select a window/document" feature ?
+

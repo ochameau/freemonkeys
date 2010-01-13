@@ -130,15 +130,32 @@ body {
   background-color: white;
 }
 
-#error-tooltip {
+#line-tooltip {
   display:none; 
   z-index:1000;
   border: 1px solid #ddd;
-  -moz-box-shadow:0 0 10px #000; 
-  background: rgba(238,238,238,0.9);
+  -moz-box-shadow:1px 1px 10px #000; 
+  background: rgba(238,238,238,0.95);
   color: black;
   -moz-border-radius: 10px;
   padding:10px 15px; 
+  text-align: center;
+}
+#line-tooltip:hover {
+  background: rgba(238,238,238,1);
+}
+#line-tooltip .title {
+  
+}
+#line-tooltip .message {
+  font-family: courier;
+  font-size: 10px;
+}
+#line-tooltip .screenshot {
+  margin-top: 10px;
+  -moz-box-shadow:0 0 6px 1px rgba(0,0,255,0.4);
+  -moz-border-radius: 3px;
+  border: 1px solid transparent;
 }
 
 .CodeMirror-wrapping {
@@ -191,4 +208,11 @@ body {
 }
 span.change-path:hover {
   text-decoration: underline;
+}
+input[type="checkbox"] {
+  margin-left: 20px;
+}
+input[type="checkbox"]+span {
+  cursor: pointer;
+  -moz-user-select:none;
 }

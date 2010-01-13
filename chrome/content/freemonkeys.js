@@ -133,9 +133,9 @@ gFreemonkeys.execute = function () {
       if (line>=0) {
         var lineElement = gFreemonkeys.linesContainer.childNodes[line-1];
         lineElement.className="error";
-        lineElement.setAttribute("title","<strong>Exception at line "+line+" :</strong><br/> "+res.message);
+        lineElement.setAttribute("title",'<strong class="title">Exception at line '+line+'</strong><br/><pre class="message">'+res.message.replace("<","&lt;").replace(">","&gt;")+'</pre>');
         $(lineElement).tooltip({
-          tip : '#error-tooltip',
+          tip : '#line-tooltip',
           position: "center right",
           offset: [-2, 10]
         });
@@ -146,18 +146,18 @@ gFreemonkeys.execute = function () {
       gFreemonkeys.print("debug","log",res);
       var lineElement = gFreemonkeys.linesContainer.childNodes[line-1];
       lineElement.className="message";
-      lineElement.setAttribute("title","<strong>Debug message :</strong><br/> "+res);
+      lineElement.setAttribute("title",'<strong class="title">Debug message</strong><br/><pre class="message">'+res.replace("<","&lt;").replace(">","&gt;")+'</pre>');
       $(lineElement).tooltip({
-        tip : '#error-tooltip',
+        tip : '#line-tooltip',
         position: "center right",
         offset: [-2, 10]
       });
     } else if (type=="screenshot") {
       var lineElement = gFreemonkeys.linesContainer.childNodes[line-1];
       lineElement.className="screenshot";
-      lineElement.setAttribute("title","<strong>Screenshot :</strong><br/> <img src=\""+res+"\" />");
+      lineElement.setAttribute("title",'<strong class="title">Screenshot</strong><br/><img class="screenshot" src="'+res+'" />');
       $(lineElement).tooltip({
-        tip : '#error-tooltip',
+        tip : '#line-tooltip',
         position: "center right",
         offset: [-2, 10]
       });

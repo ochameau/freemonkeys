@@ -247,11 +247,11 @@ macro.execute = function (code, listener) {
         return boxobject;
       }
       
-      this.screenshot = function () {
+      this.screenshot = function (maxSize) {
         var node = this.waitForNode();
         var bo = this.getBoxobject();
-        var canvas = macro.rectToCanvas(node.ownerDocument.defaultView,bo.x,bo.y,bo.width,bo.height);
-        var data = canvas.toDataURL("image/png", "");
+        var sc = macro.rectToCanvas(node.ownerDocument.defaultView,bo.x,bo.y,bo.width,bo.height, maxSize?maxSize:600);
+        var data = sc.canvas.toDataURL("image/jpeg", "");
         listener("screenshot",Components.stack.caller.lineNumber+1,data);
         return data;
       }
@@ -260,7 +260,8 @@ macro.execute = function (code, listener) {
   garden.elements.xpath = function (win, xpath, anonymousXPath) {
     return new garden.elements.MonkeyElement(
       function () {
-        var doc = win.document.wrappedJSObject;
+        var doc = win.document;
+        //if (doc.wrappedJSObject) doc = doc.wrappedJSObject;
         // XPathResult = Components.interfaces.nsIDOMXPathResult
         var results = doc.evaluate(xpath,doc,null,Components.interfaces.nsIDOMXPathResult.ANY_TYPE, null);
         return results.iterateNext();
@@ -268,10 +269,6 @@ macro.execute = function (code, listener) {
   }
   
   garden.elements.selector = function (win, selector) {
-    
-  }
-  
-  garden.elements.screenshot = function (element) {
     
   }
   
@@ -575,7 +572,7 @@ macro.saveCanvas = function (canvas, destFile) {
   persist.saveURI(source, null, null, null, null, file);
 }
 
-macro.rectToCanvas = function (wnd, x,y,w,h) {
+macro.rectToCanvas = function (wnd, x,y,w,h, maxSize) {
 	
 	var windowWidth = wnd.innerWidth;
   var windowHeight = wnd.innerHeight;
@@ -588,22 +585,43 @@ macro.rectToCanvas = function (wnd, x,y,w,h) {
 		w=windowWidth;
 	if (!h)
 		h=windowHeight;
-	
+  
+	if (!maxSize)
+    maxSize = Math.max(w,h);
+  
+  var width=w, height=h;
+  if (width>maxSize || height>maxSize) {
+    if (w>h) {
+      height = Math.round(height * maxSize/width);
+      width = maxSize;
+    } else {
+      width = Math.round(width * maxSize/height);
+      height = maxSize;
+    }
+  }
+  
+  
   var canvas = hiddenWindow.document.createElementNS("http://www.w3.org/1999/xhtml","canvas");
-  canvas.width = w;
-  canvas.height = h;
+  canvas.width = width;
+  canvas.height = height;
   
   var ctx = canvas.getContext("2d");
-/*
-  ctx.scale(300 / windowWidth,
-            300 / windowHeight);
-*/
+
+  
+  ctx.scale(width / w,
+            height / h);
+            
   ctx.drawWindow(wnd,
                  x, y,
                  w, h,
                  "rgb(255,255,255)");
-	
-	return canvas;
+  
+  
+  /*
+	canvas.width = width;
+  canvas.height = height;
+  */
+	return {canvas:canvas,width:width,height:height};
 }
 
 macro._currentOver = null;
@@ -814,11 +832,11 @@ macro.getNodeInfo = function (node, dontGetPreview) {
   };
   
   if (!dontGetPreview) {
-    var canvas = this.rectToCanvas(node.ownerDocument.defaultView,bo.x,bo.y,bo.width,bo.height);
+    var sc = this.rectToCanvas(node.ownerDocument.defaultView,bo.x,bo.y,bo.width,bo.height);
     obj.preview = {
-      data : canvas.toDataURL("image/png", ""),
-      width : bo.width,
-      height : bo.height
+      data : sc.canvas.toDataURL("image/png", ""),
+      width : sc.width,
+      height : sc.height
     };
   }
   
