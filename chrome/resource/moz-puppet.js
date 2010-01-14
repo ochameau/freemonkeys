@@ -22,7 +22,7 @@ function addLocalObject(id, o) {
   localObjects[id]=o;
 }
 
-//function dump() {}
+function dump() {}
 
 ///////////////////////////////////////////////////////////////////////
 
@@ -270,7 +270,7 @@ PuppetConnexion.prototype.accept = function (transport)
       try {
         _self.tryRead();
       } catch(e) {dump("!!! interval ex : "+e+"\n");}
-    }, 100);
+    }, 10);
     
     this.blocking = new BlockingPuppet(this);
     this.async = new AsyncPuppet(this);

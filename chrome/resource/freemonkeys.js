@@ -205,6 +205,87 @@ FreemonkeysZoo.selectNode = function (application, profile, onClick) {
     );
 }
 
+FreemonkeysZoo.writeToFile = function (file, data) {
+  // file is nsIFile, data is a string
+  var foStream = Components.classes["@mozilla.org/network/file-output-stream;1"].
+                           createInstance(Components.interfaces.nsIFileOutputStream);
+
+  // use 0x02 | 0x10 to open file for appending.
+  foStream.init(file, 0x02 | 0x08 | 0x20, 0777, 0); 
+  // write, create, truncate
+  // In a c file operation, we have no need to set file mode with or operation,
+  // directly using "r" or "w" usually.
+
+  // if you are sure there will never ever be any non-ascii text in data you can 
+  // also call foStream.writeData directly
+  var converter = Components.classes["@mozilla.org/intl/converter-output-stream;1"].
+                            createInstance(Components.interfaces.nsIConverterOutputStream);
+  converter.init(foStream, "UTF-8", 0, 0);
+  converter.writeString(data);
+  converter.close(); // this closes foStream
+}
+
+FreemonkeysZoo.prepareProfile = function (profile, doACopy) {
+  // Init profile, check if it's here and valid
+  var profileFile = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
+  try {
+    profileFile.initWithPath(profile);
+  } catch(e) {
+    throw new Error("Profile directory is not valid : "+e);
+  }
+  try {
+    if (!profileFile.exists())
+      profileFile.create(Components.interfaces.nsIFile.DIRECTORY_TYPE, 0777);
+  } catch(e) {
+    throw new Error("Profile directory doesn't exist, nor are able to create it empty : "+e);
+  }
+  
+  // Do a copy of the profile to keep it clean
+  // and always have the same one for each test execution!
+  if (doACopy) {
+    var dstFile = Components.classes["@mozilla.org/file/directory_service;1"].  
+                      getService(Components.interfaces.nsIProperties).  
+                      get("TmpD", Components.interfaces.nsIFile);
+    try {
+      dstFile.append("profile-copy");  
+      if (dstFile.exists())
+        dstFile.remove(true);
+      profileFile.copyTo(dstFile.parent(),"profile-copy");
+      profileFile = dstFile;
+    } catch(e) {
+      throw new Error("Unable to create a temporary profile directory and copy source profile into it : "+e);
+    }
+    if (!profileFile.exists())
+      throw new Error("Unable to copy profile to a temporary one!");
+  }
+  
+  // Install all extensions from the $XULRUNNER_APP_DIR/remote-extensions/ into profile by write text link
+  var extensionsSrcDir = Components.classes["@mozilla.org/file/directory_service;1"].  
+                      getService(Components.interfaces.nsIProperties).  
+                      get("resource:app", Components.interfaces.nsIFile);
+  extensionsSrcDir.append("remote-extensions");
+  
+  var extensionsDstDir = profileFile.clone();
+  extensionsDstDir.append("extensions");
+  if (!extensionsDstDir.exists())
+    extensionsDstDir.create(Components.interfaces.nsIFile.DIRECTORY_TYPE, 0777);
+  
+  var entries = extensionsSrcDir.directoryEntries;  
+  var array = [];  
+  while(entries.hasMoreElements()) {  
+    var srcExt = entries.getNext();  
+    srcExt.QueryInterface(Components.interfaces.nsIFile);  
+    var dstExt = extensionsDstDir.clone();
+    dstExt.append( srcExt.leafName );
+    if (dstExt.exists())
+      dstExt.remove(false);
+    FreemonkeysZoo.writeToFile(dstExt, srcExt.path);
+  }
+  
+}
+
+
+
 var gPortNumber = 9000;
 FreemonkeysZoo.execute = function (application, profile, code, listener) {
   
@@ -234,6 +315,7 @@ FreemonkeysZoo.execute = function (application, profile, code, listener) {
     //listener("error",-1,"Monkey creation timeout !?");
   }
   
+  FreemonkeysZoo.prepareProfile(profile);
   getMonkey(function (monkey) {
     listener("monkey",-1,"ready");
     monkey.asyncMacro.execObjectFunction(

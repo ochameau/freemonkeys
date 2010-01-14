@@ -1,9 +1,12 @@
-- Move network extension out of profile and replace it with a link
-- add two options : 
+- add two options (need UI, code's done): 
   * use an empty profile
   * use specified profile but do a copy before using it (to keep it clean)
 - handle exceptions on xpath fail
-- implements selector
+- implements css selector
 - add option to show timestamp for each assert time
 - add windows info in selector popup and/or add "select a window/document" feature ?
-
+- add something : js api and/or config to automatically set some preferences values 
+(like browser.shell.checkDefaultBrowser=false or browser.rights.3.shown=true)
+- click'n keypress actions on elements
+- browser js helper
+- auto-detect firefox path (regedit?)
