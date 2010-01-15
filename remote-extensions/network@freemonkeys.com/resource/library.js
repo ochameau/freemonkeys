@@ -4,7 +4,6 @@ var hiddenWindow = Components.classes["@mozilla.org/appshell/appShellService;1"]
          .getService(Components.interfaces.nsIAppShellService)
          .hiddenDOMWindow;
 
-
 function inspect(obj) {
   var wm = Components.classes["@mozilla.org/appshell/window-mediator;1"].getService(Components.interfaces.nsIWindowMediator);
   var win = wm.getMostRecentWindow("navigator:browser");
@@ -15,267 +14,48 @@ function inspect(obj) {
 
 Components.utils.import("resource://fm-network/moz-puppet.js");
 
-var screenshotId=1;
-
 var macro = {};
 
 macro.execute = function (code, listener) {
+try {
   var garden = Components.utils.Sandbox(this.__parent__);//"http://localhost.localdomain.:0/");
+  garden.__proto__ = this.__parent__.wrappedJSObject?this.__parent__.wrappedJSObject:this.__parent__;
+  
+  var loader = Components.classes["@mozilla.org/moz/jssubscript-loader;1"]
+                       .getService(Components.interfaces.mozIJSSubScriptLoader); 
   
   garden.monkey = {};
   
-  garden.monkey.windows = {}
+  garden.___api_exception = function (exception) {
+    listener("exception",Components.stack.caller.caller.lineNumber+1,{message:Components.stack.caller.name+" : "+exception,e:exception});
+  }
+  garden.listener = listener;
   
-  garden.monkey.windows.MonkeyTab = 
-    function MonkeyTab(gBrowser, tab) {
-      var linkedBrowser = tab.linkedBrowser;
-      var webNavigation = linkedBrowser.webNavigation;
-      
-      this.__defineGetter__("document", function () {
-        return linkedBrowser.contentDocument;
-      });
-      this.open = function (url) {
-        linkedBrowser.loadURI(url,null,null);
-      }
-      this.close = function () {
-        gBrowser.removeTab(tab);
-      }
-      this.back = function () {
-        if (webNavigation.canGoBack)
-          webNavigation.goBack();
-      }
-      this.forward = function () {
-        if (webNavigation.canGoForward)
-          webNavigation.goForward();
-      }
-      this.reload = function () {
-        webNavigation.reload(webNavigation.LOAD_FLAGS_BYPASS_PROXY | webNavigation.LOAD_FLAGS_BYPASS_CACHE);
-      }
-      this.getInternal = function () {
-        return tab;
-      }
-    };
+  // Some usefull functions in global context
+  garden.setInterval = function (f,t) {hiddenWindow.setInterval(f,t)};
+  garden.clearInterval = function (t) {hiddenWindow.clearInterval(t)};
+  garden.setTimeout = function (f,t) {hiddenWindow.setTimeout(f,t)};
+  garden.setTimeout = function (t) {hiddenWindow.clearTimeout(t)};
   
-  garden.monkey.windows.MonkeyWindow = 
-    function MonkeyWindow(win) {
-      this.win = win;
-      var gBrowser = win.gBrowser;
-      this.__defineGetter__("document", function () {
-        return win.document;
-      });
-      this.tabs = {
-        new : function (url, doNotSelect) {
-          if (!url) url="about:blank";
-          var tab = gBrowser.addTab(url);
-          if (!doNotSelect)
-            gBrowser.selectedTab = tab;
-          return new garden.monkey.windows.MonkeyTab(gBrowser, tab);
-        },
-        get current() {
-          return new garden.monkey.windows.MonkeyTab(gBrowser, gBrowser.selectedTab);
-        }
-      }
-      this.minimize = function () {
-        win.minimize();
-      }
-      this.maximize = function () {
-        win.maximize();
-      }
-      this.close = function () {
-        win.close();
-      }
-      this.getInternal = function () {
-        return win;
-      }
-    };
+  garden.monkey.windows = {};
+  loader.loadSubScript("resource://fm-network/api/monkey.windows.js", garden.monkey);
   
-  garden.monkey.windows.ORDER_BY_ZORDER = 1;
-  garden.monkey.windows.ORDER_BY_CREATION_DATE = 2;
-  garden.monkey.windows.get = function (id, type, title, order) {
-    var list = [];
-    
-    var wm = Components.classes["@mozilla.org/appshell/window-mediator;1"]
-                     .getService(Components.interfaces.nsIWindowMediator);
-    var enumerator = wm.getXULWindowEnumerator(null);
-    while(enumerator.hasMoreElements()) {
-      var xulWin = enumerator.getNext().QueryInterface( Components.interfaces.nsIXULWindow);
-      var requestor = xulWin.docShell.QueryInterface(Components.interfaces.nsIInterfaceRequestor);
-      var chromewin = requestor.getInterface(Components.interfaces.nsIDOMWindow);
-      var domwin = chromewin.document.documentElement;
-      
-      if (id && id!=domwin.id) continue;
-      if (type && type!=domwin.getAttribute("windowtype")) continue;
-      if (title && title!=domwin.getAttribute("title")) continue;
-      
-      var zindex = xulWin.zLevel;
-      
-      list.push({zindex:zindex,win:chromewin});
-    }
-    
-    // Sort the retrieved list
-    if (!order || order == monkey.windows.ORDER_BY_ZORDER) {
-      list.sort(function (a,b) {return a.zindex<b.zindex;});
-    }
-    
-    // Remove work info and return only windows wrapper
-    var result = [];
-    for(var i=0; i<list.length; i++) {
-      result.push(new garden.monkey.windows.MonkeyWindow(list[i].win));
-    }
-    
-    return result;
-  };
+  garden.assert = {};
+  loader.loadSubScript("resource://fm-network/api/assert.js", garden);
   
-  
-  garden.assert = {
-    _assert : function (assert, args) {
-      if (assert) {
-        listener("assert-pass",Components.stack.caller.caller.lineNumber+1,{name:arguments.callee.caller.name});
-      } else {
-        listener("assert-fail",Components.stack.caller.caller.lineNumber+1,{name:arguments.callee.caller.name,args:args});
-      }
-    },
-    isTrue : function isTrue(v) {
-      this._assert((typeof v=="boolean" && v),[v]);
-    },
-    isFalse : function isFalse(v) {
-      this._assert((typeof v=="boolean" && !v),[v]);
-    },
-    isEquals : function isEquals(a,b) {
-      this._assert(a===b,[a,b]);
-    },
-    isDefined : function isDefined(v) {
-      this._assert(v!=null,[v]);
-    }
-  };
-  
-  garden.log = {
-    print : function (v) {
-      listener("print",Components.stack.caller.lineNumber+1,v);
-    },
-    debug : function (v) {
-      listener("print",Components.stack.caller.lineNumber+1,v);
-    },
-    inspect : function (v) {
-      //listener("inspect",Components.stack.caller.lineNumber+1,v);
-      inspect(v);
-    }
-  };
+  garden.log = {};
+  loader.loadSubScript("resource://fm-network/api/log.js", garden);
   
   garden.elements = {}
-  
-  garden.elements.MonkeyElement = 
-    function MonkeyElement(getter) {
-      this._cache = null;
-      this.waitForNode = function () {
-        if (this._cache) return this._cache;
-        
-        var start = new Date().getTime();
-        
-        var node = false;
-        var exception;
-        
-        var self=this;
-        function wait() {
-          try {
-            node = self.getNode();
-          } catch(e) {
-            exception = e;
-          }
-        }
-        
-        var timeoutInterval = hiddenWindow.setInterval(wait, 100);
-        
-        var thread = Components.classes["@mozilla.org/thread-manager;1"]
-                  .getService()
-                  .currentThread;
-
-        while(!node && new Date().getTime()-start < 5000) {
-          thread.processNextEvent(true);
-        }
-        
-        hiddenWindow.clearInterval(timeoutInterval);
-        
-        if (node)
-          return node;
-        if (exception)
-          throw exception;
-        else
-          throw new Error("Unable to found this node");
-      }
-      
-      this.getNode = function () {
-        try {
-          if (this._cache) return this._cache;
-          this._cache = getter();
-          if (!this._cache)
-            throw new Error("Unable to found this node");
-          return this._cache;
-        } catch(e) {
-          throw new Error("Unable to retrieve node : "+e);
-        }
-      }
-      
-      this.getBoxobject = function () {
-        var elt = this.waitForNode();
-        var boxobject = null;
-        // html case
-        if (elt.ownerDocument && elt.ownerDocument.getBoxObjectFor)
-          boxobject=elt.ownerDocument.getBoxObjectFor(elt);
-        // xul case
-        if (!boxobject)
-          boxobject=elt.boxObject;
-        // problem case
-        if (!boxobject) {
-          dump("unable to get easily boxobject : "+elt.tagName);
-          var docshell = elt.QueryInterface(Ci.nsIInterfaceRequestor)
-                               .getInterface(Ci.nsIWebNavigation)
-                               .QueryInterface(Ci.nsIDocShell);
-          if (!docshell.chromeEventHandler)
-            inspect(docshell);
-          var boxobject = docshell.chromeEventHandler.boxObject;
-          if (boxobject) {
-            dump("getboxobject with doshell xul : "+docshell.chromeEventHandler.tagName);
-          }
-          if (!boxobject) {
-            dump("get boxobject with docshell html : "+docshell.chromeEventHandler.tagName+"/"+docshell.chromeEventHandler.ownerDocument.tagName);
-            boxobject = docshell.chromeEventHandler.ownerDocument.getBoxObjectFor(docshell.chromeEventHandler);
-          }
-          if (!boxobject)
-            dump("Unable to get boxobject!!!");
-        }
-        return boxobject;
-      }
-      
-      this.screenshot = function (maxSize) {
-        var node = this.waitForNode();
-        var bo = this.getBoxobject();
-        var sc = macro.rectToCanvas(node.ownerDocument.defaultView,bo.x,bo.y,bo.width,bo.height, maxSize?maxSize:600);
-        var data = sc.canvas.toDataURL("image/jpeg", "");
-        listener("screenshot",Components.stack.caller.lineNumber+1,data);
-        return data;
-      }
-    }
-  
-  garden.elements.xpath = function (win, xpath, anonymousXPath) {
-    return new garden.elements.MonkeyElement(
-      function () {
-        var doc = win.document;
-        //if (doc.wrappedJSObject) doc = doc.wrappedJSObject;
-        // XPathResult = Components.interfaces.nsIDOMXPathResult
-        var results = doc.evaluate(xpath,doc,null,Components.interfaces.nsIDOMXPathResult.ANY_TYPE, null);
-        return results.iterateNext();
-      });
-  }
-  
-  garden.elements.selector = function (win, selector) {
-    
-  }
-  
+  loader.loadSubScript("resource://fm-network/api/elements.js", garden);
   
   try {
+    Components.utils.reportError("start");
     var result = Components.utils.evalInSandbox(code, garden, "1.8", "test-buffer", 0);
+    Components.utils.reportError("end");
   } catch(e) {
+    Components.utils.reportError("ex");
+    //inspect(e);
     var line;
     if (e.location || (e.fileName && e.lineNumber)) {
       var s=e.location || {filename:e.fileName,lineNumber:e.lineNumber};
@@ -289,8 +69,13 @@ macro.execute = function (code, listener) {
     if (!line)
       line=-1;
     listener("exception",line,{message:""+e,exception:e});
+    Components.utils.reportError(e+"\n"+e.stack);
   }
   listener("execute",-1,"end");
+} catch(e) {
+  listener("exception",-1,{message:""+e,exception:e});
+  Components.utils.reportError(e);
+}
 }
 
 
@@ -600,14 +385,12 @@ macro.rectToCanvas = function (wnd, x,y,w,h, maxSize) {
     }
   }
   
-  
   var canvas = hiddenWindow.document.createElementNS("http://www.w3.org/1999/xhtml","canvas");
   canvas.width = width;
   canvas.height = height;
   
   var ctx = canvas.getContext("2d");
 
-  
   ctx.scale(width / w,
             height / h);
             
@@ -616,11 +399,6 @@ macro.rectToCanvas = function (wnd, x,y,w,h, maxSize) {
                  w, h,
                  "rgb(255,255,255)");
   
-  
-  /*
-	canvas.width = width;
-  canvas.height = height;
-  */
 	return {canvas:canvas,width:width,height:height};
 }
 

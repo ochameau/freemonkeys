@@ -82,7 +82,7 @@ body {
   padding-right: 20px;
   cursor: pointer;
 }
-.panel .actions > *:hover {
+.panel .actions > span:hover {
   color: #00c;
 }
 
