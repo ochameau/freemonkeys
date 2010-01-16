@@ -78,7 +78,7 @@ windows.get = function (id, type, title, order) {
                    .getService(Components.interfaces.nsIWindowMediator);
   var enumerator = wm.getXULWindowEnumerator(null);
   while(enumerator.hasMoreElements()) {
-    var xulWin = enumerator.getNext().QueryInterface( Components.interfaces.nsIXULWindow);
+    var xulWin = enumerator.getNext().QueryInterface(Components.interfaces.nsIXULWindow);
     var requestor = xulWin.docShell.QueryInterface(Components.interfaces.nsIInterfaceRequestor);
     var chromewin = requestor.getInterface(Components.interfaces.nsIDOMWindow);
     var domwin = chromewin.document.documentElement;

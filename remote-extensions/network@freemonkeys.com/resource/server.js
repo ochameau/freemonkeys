@@ -1,4 +1,4 @@
-const EXPORTED_SYMBOLS = ["startFreemonkeyServer"];
+const EXPORTED_SYMBOLS = ["startFreemonkeyServer","stopFreemonkeyServer"];
 
 Components.utils.import("resource://fm-network/moz-puppet.js");
 
@@ -46,4 +46,9 @@ function startFreemonkeyServer(port) {
   server = new Server(port);
   server.start();
   return server;
+}
+
+function stopFreemonkeyServer() {
+  if (server)
+    server.cleanPuppets();
 }
