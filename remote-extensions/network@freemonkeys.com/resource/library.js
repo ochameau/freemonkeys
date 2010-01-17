@@ -56,8 +56,8 @@ try {
   } catch(e) {
     Components.utils.reportError("ex");
     //inspect(e);
-    var line;
-    if (e.location || (e.fileName && e.lineNumber)) {
+    var line = -1;
+    if (e.location || (e.fileName && typeof e.lineNumber=="number")) {
       var s=e.location || {filename:e.fileName,lineNumber:e.lineNumber};
       while(s.filename!="test-buffer" && s.caller) {
         Components.utils.reportError("stack : "+s);
@@ -66,8 +66,6 @@ try {
       if (s && s.filename=="test-buffer")
         line = s.lineNumber+1;
     }
-    if (!line)
-      line=-1;
     listener("exception",line,{message:""+e,exception:e});
     Components.utils.reportError(e+"\n"+e.stack);
   }

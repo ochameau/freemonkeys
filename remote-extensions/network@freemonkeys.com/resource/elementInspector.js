@@ -77,7 +77,10 @@ elementInspector._clickListener = function (event) {
   event.preventDefault();
   
   elementInspector.stopHighlighting();
-  elementInspector.callback(null, null, elementInspector.getNodeInfo(elementInspector._currentOver));
+  
+  hiddenWindow.setTimeout(function () {
+    elementInspector.callback(null, null, elementInspector.getNodeInfo(elementInspector._currentOver));
+  },100);
 }
 
 elementInspector._currentOver = null;

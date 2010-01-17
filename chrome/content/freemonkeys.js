@@ -91,17 +91,11 @@ gFreemonkeys.switchTo = function (panelName) {
   eval(onshow);
 }
 
-gFreemonkeys.focusEditor = function () {
-  window.document.documentElement.focus();
-  window.setTimeout(function(){
-      gFreemonkeys.editor.focus();
-    },0);
-}
-
 gFreemonkeys.print = function (classname, type, msg) {
   //Components.utils.reportError(classname+","+type+" -- "+msg);
   this.reportList.innerHTML += '<li class="'+classname+'">'+type+" : "+msg+"</li>";
 }
+
 gFreemonkeys.cleanReport = function () {
   this.reportList.innerHTML = "";
   var c = gFreemonkeys.linesContainer;
@@ -116,6 +110,27 @@ gFreemonkeys.cleanReport = function () {
   $.tools.tooltip.resetInstances();
 }
 
+gFreemonkeys.getLineElementFor = function (line) {
+  var lineElement = gFreemonkeys.linesContainer.childNodes[line-1];
+  // Be aware of line wrapping!
+  // Wrapped lines add empty line number div!
+  //Components.utils.reportError(lineElement.textContent+" ?= "+line);
+  while((lineElement.textContent!=line) && lineElement.nextSibling) {
+    //Components.utils.reportError(lineElement.textContent+"!="+line);
+    lineElement = lineElement.nextSibling;
+  }
+  return lineElement;
+}
+gFreemonkeys.addLineTooltip = function (line, classname, title, content) {
+  var lineElement = this.getLineElementFor(line);
+  lineElement.className=classname;
+  lineElement.setAttribute("title",'<strong class="title">'+title+'</strong><br/>'+content);
+  $(lineElement).tooltip({
+    tip : '#line-tooltip',
+    position: "center right",
+    offset: [-2, 10]
+  });
+}
 
 gFreemonkeys.execute = function () {
   gFreemonkeys.cleanReport();
@@ -124,55 +139,39 @@ gFreemonkeys.execute = function () {
   var button = document.getElementById("panel-report-button");
   button.style.display="";
   function listener(type, line, res) {
-    if (type=="assert-pass" || type=="assert-fail") {
-      var msg="line "+line+": ";
-      msg += res.name;
-      if (res.args) {
-        var l=[];
-        for(var i in res.args)
-          l.push("("+(typeof res.args[i])+") "+res.args[i]);
-        msg += " ( "+l.join(", ")+" )";
-      }
-      gFreemonkeys.print(type=="assert-pass"?"pass":"fail",type=="assert-pass"?"PASS":"FAIL",msg);
-      gFreemonkeys.linesContainer.childNodes[line-1].className=type=="assert-pass"?"pass":"fail";
-    } else if (type=="exception") {
-      gFreemonkeys.print("fail","Exception","line "+line+": "+res.message);
-      if (line>=0) {
-        var lineElement = gFreemonkeys.linesContainer.childNodes[line-1];
-        lineElement.className="error";
-        lineElement.setAttribute("title",'<strong class="title">Exception at line '+line+'</strong><br/><pre class="message">'+res.message.replace("<","&lt;").replace(">","&gt;")+'</pre>');
-        $(lineElement).tooltip({
-          tip : '#line-tooltip',
-          position: "center right",
-          offset: [-2, 10]
-        });
+    try {
+      if (type=="assert-pass" || type=="assert-fail") {
+        var msg="line "+line+": ";
+        msg += res.name;
+        if (res.args) {
+          var l=[];
+          for(var i in res.args)
+            l.push("("+(typeof res.args[i])+") "+res.args[i]);
+          msg += " ( "+l.join(", ")+" )";
+        }
+        gFreemonkeys.print(type=="assert-pass"?"pass":"fail",type=="assert-pass"?"PASS":"FAIL",msg);
+        var lineElement = gFreemonkeys.getLineElementFor(line);
+        lineElement.className=type=="assert-pass"?"pass":"fail";
+      } else if (type=="exception") {
+        gFreemonkeys.print("fail","Exception","line "+line+": "+res.message);
+        if (line>=0) {
+          gFreemonkeys.addLineTooltip(line,"error",'Exception at line '+line,'<pre class="message">'+res.message.replace("<","&lt;").replace(">","&gt;")+'</pre>');
+        } else {
+          Components.utils.reportError(res.message);
+        }
+      } else if (type=="print") {
+        gFreemonkeys.print("debug","log",res);
+        gFreemonkeys.addLineTooltip(line,"message",'Debug message at line '+line,'<pre class="message">'+res.replace("<","&lt;").replace(">","&gt;")+'</pre>');
+      } else if (type=="screenshot") {
+        gFreemonkeys.addLineTooltip(line,"screenshot",'Screenshot at line '+line,'<img class="screenshot" src="'+res+'" />');
+      } else if (typeof res=="object") {
+        gFreemonkeys.print("debug",type,(res.line?res.line:"?")+" - "+res.toSource());
+        inspect(res);
       } else {
-        Components.utils.reportError(res.message);
+        gFreemonkeys.print("debug",type,res?res:"");
       }
-    } else if (type=="print") {
-      gFreemonkeys.print("debug","log",res);
-      var lineElement = gFreemonkeys.linesContainer.childNodes[line-1];
-      lineElement.className="message";
-      lineElement.setAttribute("title",'<strong class="title">Debug message</strong><br/><pre class="message">'+res.replace("<","&lt;").replace(">","&gt;")+'</pre>');
-      $(lineElement).tooltip({
-        tip : '#line-tooltip',
-        position: "center right",
-        offset: [-2, 10]
-      });
-    } else if (type=="screenshot") {
-      var lineElement = gFreemonkeys.linesContainer.childNodes[line-1];
-      lineElement.className="screenshot";
-      lineElement.setAttribute("title",'<strong class="title">Screenshot</strong><br/><img class="screenshot" src="'+res+'" />');
-      $(lineElement).tooltip({
-        tip : '#line-tooltip',
-        position: "center right",
-        offset: [-2, 10]
-      });
-    } else if (typeof res=="object") {
-      gFreemonkeys.print("debug",type,(res.line?res.line:"?")+" - "+res.toSource());
-      inspect(res);
-    } else {
-      gFreemonkeys.print("debug",type,res?res:"");
+    } catch(e) {
+      Components.utils.reportError(e);
     }
   }
   
@@ -189,17 +188,32 @@ gFreemonkeys.execute = function () {
 }
 
 gFreemonkeys.selectNode = function () {
+  /*
+  // Nothing works to restore our window on top of all other applications :/
+  
+  var baseWin = window.QueryInterface(Components.interfaces.nsIInterfaceRequestor)
+                                        .getInterface(Components.interfaces.nsIWebNavigation)
+                                        .QueryInterface(Components.interfaces.nsIDocShell)
+                                        .QueryInterface(Components.interfaces.nsIDocShellTreeItem)
+                                        .treeOwner
+                                        .QueryInterface(Components.interfaces.nsIBaseWindow);
+  baseWin.enabled=false;
+  baseWin.visibility=false;
+  var xulwin = window.QueryInterface(Components.interfaces.nsIInterfaceRequestor)
+          .getInterface(Components.interfaces.nsIWebNavigation)
+          .QueryInterface(Components.interfaces.nsIDocShellTreeItem)
+          .treeOwner
+          .QueryInterface(Components.interfaces.nsIInterfaceRequestor)
+          .getInterface(Components.interfaces.nsIXULWindow);
+  xulwin.zLevel = xulwin.highestZ;
+  */
+  
   window.minimize();
+  
   function onClick(win, frame, node) {
+    
     window.restore();
-    var xulwin = window.QueryInterface(Components.interfaces.nsIInterfaceRequestor)
-      .getInterface(Components.interfaces.nsIWebNavigation)
-      .QueryInterface(Components.interfaces.nsIDocShellTreeItem)
-      .treeOwner
-      .QueryInterface(Components.interfaces.nsIInterfaceRequestor)
-      .getInterface(Components.interfaces.nsIXULWindow);
-    xulwin.zLevel = xulwin.highestZ;
-    window.focus();
+    
     var content = "\n";
     content += 'var element = elements.xpath(win, "'+node.xpath.replace('"','\\"')+'"';
     if (node.binding)
@@ -207,6 +221,8 @@ gFreemonkeys.selectNode = function () {
     content += ');\n';
     gFreemonkeys.editor.insertIntoLine(gFreemonkeys.editor.currentLine,0, content);
     //inspect([win,frame,node]);
+    
+    gFreemonkeys.focusEditor();
   }
   FreemonkeysZoo.selectNode(gFreemonkeys.defaultApplicationPath, gFreemonkeys.defaultProfilePath, onClick);
 }
@@ -357,6 +373,13 @@ gFreemonkeys.initEditor = function () {
         },1000);
     }
   });
+}
+
+gFreemonkeys.focusEditor = function () {
+  window.document.documentElement.focus();
+  window.setTimeout(function(){
+      gFreemonkeys.editor.focus();
+    },0);
 }
 
 gFreemonkeys.load = function () {
