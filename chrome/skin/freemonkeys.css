@@ -140,6 +140,9 @@ body {
   -moz-border-radius: 10px;
   padding:10px 15px; 
   text-align: center;
+  max-height: 500px;
+  max-width: 700px;
+  overflow: auto;
 }
 #line-tooltip:hover {
   background: rgba(238,238,238,1);
