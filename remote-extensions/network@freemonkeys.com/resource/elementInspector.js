@@ -113,22 +113,133 @@ elementInspector.unhighlightNode = function (node) {
   node.style.removeProperty("border");
 }
 
+elementInspector.registeredTopWindows = [
+// Main windows:
+  { id    : "firefox-window",
+    name  : "Firefox Window",
+    params: {
+      type: "navigator:browser",
+      id  : "main-window"
+    }
+  },
+  { id    : "js-console",
+    name  : "JS Console",
+    params: {
+      type: "global:console",
+      id  : "JSConsoleWindow"
+    }
+  },
+  { id    : "dom-inspector",
+    name  : "DOM Inspector",
+    params: {
+      type: "",
+      id  : "winInspectorMain"
+    }
+  },
+// Firefox popups
+  { id    : "firefox-settings",
+    name  : "Firefox Preferences panel",
+    params: {
+      type: "Browser:Preferences",
+      id  : "BrowserPreferences"
+    }
+  },
+  { id    : "firefox-about",
+    name  : "About dialog",
+    params: {
+      type: "Browser:About",
+      id  : "aboutDialog"
+    }
+  },
+  { id    : "page-info",
+    name  : "Page info dialog",
+    params: {
+      type: "Browser:page-info",
+      id  : "main-window"
+    }
+  },
+  { id    : "download-manager",
+    name  : "Download manager",
+    params: {
+      type: "Download:Manager",
+      id  : "downloadManager"
+    }
+  },
+  { id    : "extension-manager",
+    name  : "Extension manager",
+    params: {
+      type: "Extension:Manager",
+      id  : "extensionsManager"
+    }
+  },
+  { id    : "places-manager",
+    name  : "Places manager",
+    params: {
+      type: "Places:Organizer",
+      id  : "places"
+    }
+  },
+
+// Firefox sidebars
+  { id    : "sidebar-bookmarks",
+    name  : "Bookmarks sidebar",
+    params: {
+      name: "sidebar",
+      location: "chrome://browser/content/bookmarks/bookmarksPanel.xul"
+    }
+  },
+  { id    : "sidebar-history",
+    name  : "History sidebar",
+    params: {
+      name: "sidebar",
+      location: "chrome://browser/content/history/history-panel.xul"
+    }
+  }
+  
+];
+
+elementInspector.identifyWindow = function (win) {
+  for(var i=0; i<this.registeredTopWindows.length; i++) {
+    var w = this.registeredTopWindows[i];
+    if (typeof w.params.type=="string" && w.params.type!=win.type) continue;
+    if (typeof w.params.id=="string" && w.params.id!=win.id) continue;
+    if (typeof w.params.name=="string" && w.params.name!=win.name) continue;
+    if (typeof w.params.location=="string" && w.params.location!=win.location) continue;
+    return w;
+  }
+  return null;
+}
+
 elementInspector.updateNodeInfo = function (node) {
   var info = this.getNodeInfo(node);
   var html = "";
   html += '<div style="font-size: 0.8em;margin-bottom: 10px;">';
   if (info.win) {
-    html += "<div>Child window with: title="+info.win.title+" name="+info.win.name+" location="+info.win.location+"</div>";
+    var iw = this.identifyWindow(info.win);
+    if (iw)
+      html += "<div>Child window: "+iw.name+"</div>";
+    else
+      html += "<div>Child window with: title="+info.win.title+" name="+info.win.name+" location="+info.win.location+"</div>";
   }
   html += "<div>";
   if (info.win)
-    html += "Of window with: ";
+    html += "Of window";
   else
-    html += "Window with: ";
-  html += "id="+info.topWindow.id+" title="+info.topWindow.title+" type="+info.topWindow.type+" name="+info.topWindow.name+"</div>";
+    html += "Window";
+  var itw = this.identifyWindow(info.topWindow);
+  if (itw)
+    html += ": "+itw.name+"</div>";
+  else
+    html += " with: id="+info.topWindow.id+" title="+info.topWindow.title+" type="+info.topWindow.type+" name="+info.topWindow.name+"</div>";
   
-  if (info.opener)
-    html += "<div>Opened by window with: id="+info.opener.id+" title="+info.opener.title+" name="+info.opener.name+"</div>";
+  
+  if (info.opener) {
+    var io = this.identifyWindow(info.opener);
+    if (io)
+      html += "<div>Opened by window: "+io.name;
+    else
+      html += "<div>Opened by window with: id="+info.opener.id+" title="+info.opener.title+" name="+info.opener.name+"</div>";
+  }
   html += '</div>';
   html += '<div style="font-weight: bold; font-size: 1em; padding-bottom: 10px;">'+info.xpath+'</div>';
   if (info.binding)

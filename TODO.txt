@@ -15,6 +15,6 @@
   * sidebar with id xxx of window xxx
   * first tab of window xxx
 - red box of node selector with a flying transparent window (no more as red css border)
-- bug with long lines, tooltip are shifted
+- error report on lines got wrong when editing code
 - asynchronous test handling
 - http lib
