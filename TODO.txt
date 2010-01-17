@@ -10,7 +10,6 @@
 - keypress actions on elements, check click on xul nodes
 - browser js helper
 - auto-detect firefox path (regedit?)
-- fix editor inactive until we press a character (unable to delete selection, insert a line, ... before that)
 - détection des fenetres: 
   * Topmost Firefox, topmost Firefox options, topmost JSConsole, 
   * sidebar with id xxx of window xxx

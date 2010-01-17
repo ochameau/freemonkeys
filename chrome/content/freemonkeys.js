@@ -91,6 +91,13 @@ gFreemonkeys.switchTo = function (panelName) {
   eval(onshow);
 }
 
+gFreemonkeys.focusEditor = function () {
+  window.document.documentElement.focus();
+  window.setTimeout(function(){
+      gFreemonkeys.editor.focus();
+    },0);
+}
+
 gFreemonkeys.print = function (classname, type, msg) {
   //Components.utils.reportError(classname+","+type+" -- "+msg);
   this.reportList.innerHTML += '<li class="'+classname+'">'+type+" : "+msg+"</li>";
@@ -342,9 +349,12 @@ gFreemonkeys.initEditor = function () {
     initCallback : function () {
       
       gFreemonkeys.restorePreviousSession();
-      //gFreemonkeys.editor.focus();
       gFreemonkeys.linesContainer = container.getElementsByClassName("CodeMirror-line-numbers")[0];
       
+      window.focus();
+      window.setTimeout(function(){
+          gFreemonkeys.editor.focus();
+        },1000);
     }
   });
 }
@@ -352,9 +362,9 @@ gFreemonkeys.initEditor = function () {
 gFreemonkeys.load = function () {
   this.restoreWindowParams();
   
-  this.initEditor();
-  
   window.focus();
+  
+  this.initEditor();
 }
 
 gFreemonkeys.unload = function () {
