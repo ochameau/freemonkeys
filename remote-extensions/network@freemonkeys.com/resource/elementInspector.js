@@ -214,25 +214,50 @@ elementInspector.updateNodeInfo = function (node) {
   var info = this.getNodeInfo(node);
   var html = "";
   html += '<div style="font-size: 0.8em;margin-bottom: 10px;">';
-  if (info.win) {
-    var iw = this.identifyWindow(info.win);
-    if (iw)
-      html += "<div>Child window: "+iw.name+"</div>";
-    else
-      html += "<div>Child window with: title="+info.win.title+" name="+info.win.name+" location="+info.win.location+"</div>";
-  }
-  html += "<div>";
-  if (info.win)
-    html += "Of window";
-  else
-    html += "Window";
+  
+  html += '<div style="font-weight: bold; font-size: 1em; padding-bottom: 10px;">';
+  html += 'Window: ';
+  
+  var identified = null;
   var itw = this.identifyWindow(info.topWindow);
-  if (itw)
-    html += ": "+itw.name+"</div>";
-  else
-    html += " with: id="+info.topWindow.id+" title="+info.topWindow.title+" type="+info.topWindow.type+" name="+info.topWindow.name+"</div>";
+  if (info.win) { // Is a child window of another one ?
+    var iw = this.identifyWindow(info.win);
+    if (iw) { // Is a identified one!
+      html += iw.name;
+      identified = { type:"sub-known", info : iw };
+    } else { // Try to check if this is a tab
+      var tabIndex = -1;
+      var isFirst = false, isLast = false, isCurrent = false;
+      if (itw.id=="firefox-window") {
+        try {
+          var gBrowser = info.topWindow.ref.wrappedJSObject.gBrowser;
+          tabIndex = gBrowser.getBrowserIndexForDocument(node.ownerDocument);
+          var browser = gBrowser.getBrowserAtIndex(tabIndex);
+          isFirst = tabIndex==0;
+          isLast = gBrowser.browsers.length==tabIndex+1;
+          isCurrent = gBrowser.mCurrentBrowser==browser;
+        } catch(e) {
+          Components.utils.reportError(e);
+        }
+      }
+      if (tabIndex>=0) {// Yes, it's a tab!
+        html += "Current firefox tab";
+        identified = { type:"tab", info : null };
+      } else {
+        html += "Child window with: title="+info.win.title+" name="+info.win.name+" location="+info.win.location;
+        html += "<br/>Of window : ";
+      }
+    }
+  }
   
-  
+  if (!identified) {
+    if (itw) {
+      html += itw.name+"</div>";
+      identified = { type:"top-known", info : itw };
+    } else
+      html += "id="+info.topWindow.id+" title="+info.topWindow.title+" type="+info.topWindow.type+" name="+info.topWindow.name+"</div>";
+  }
+  /*
   if (info.opener) {
     var io = this.identifyWindow(info.opener);
     if (io)
@@ -240,6 +265,7 @@ elementInspector.updateNodeInfo = function (node) {
     else
       html += "<div>Opened by window with: id="+info.opener.id+" title="+info.opener.title+" name="+info.opener.name+"</div>";
   }
+  */
   html += '</div>';
   html += '<div style="font-weight: bold; font-size: 1em; padding-bottom: 10px;">'+info.xpath+'</div>';
   if (info.binding)
@@ -350,6 +376,7 @@ elementInspector.getNodeInfo = function (node, dontGetPreview) {
     xpath : getXPath(binding?binding:node).join('/'),
     binding : binding?getXPath(node,binding).join('/'):null,
     topWindow : {
+      ref: topWindow,
       id: topWindow.document.documentElement.id,
       type : topWindow.document.documentElement.getAttribute("windowtype"),
       title : topWindow.document.title,
@@ -360,6 +387,7 @@ elementInspector.getNodeInfo = function (node, dontGetPreview) {
   
   if (win!=topWindow) {
     obj.win = {
+      ref: win,
       name: win.name,
       title: win.document.title,
       location: win.document.location.href

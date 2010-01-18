@@ -4,17 +4,15 @@
 - handle anonymous xpath
 - implements css selector
 - add option to show timestamp for each assert time
-- add windows info in selector popup and/or add "select a window/document" feature ?
 - add something : js api and/or config to automatically set some preferences values 
 (like browser.shell.checkDefaultBrowser=false or browser.rights.3.shown=true)
 - keypress actions on elements, check click on xul nodes
 - browser js helper
 - auto-detect firefox path (regedit?)
-- détection des fenetres: 
-  * Topmost Firefox, topmost Firefox options, topmost JSConsole, 
-  * sidebar with id xxx of window xxx
-  * first tab of window xxx
 - red box of node selector with a flying transparent window (no more as red css border)
 - error report on lines got wrong when editing code
 - asynchronous test handling
 - http lib
+- push window info into test code editor and add addition info on windows: 
+    isTopMost/current ? first ? last, n-th ? "the only one" ?
+  and so improve js api which are used to retrieve "known windows"
