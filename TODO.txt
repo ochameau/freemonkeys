@@ -16,3 +16,5 @@
 - push window info into test code editor and add addition info on windows: 
     isTopMost/current ? first ? last, n-th ? "the only one" ?
   and so improve js api which are used to retrieve "known windows"
+- jsapi: scroll into view
+- fix editor focus when coming back from a node selection

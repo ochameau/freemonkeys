@@ -217,34 +217,26 @@ gFreemonkeys.selectNode = function () {
     var content = "\n";
     function printWinCode(info) {
       if (info.type=="top-known") {
-        content += 'var top = monkey.windows.getRegistered("'+info.id+'");';
+        content += 'var top = monkey.windows.getRegistered("'+info.id+'");\n';
         return "top";
       } else if (info.type=="top-unknown") {
-        content += 'var top = monkey.windows.get(/*unknown*/)[0];';
+        content += 'var top = monkey.windows.get(/*unknown*/)[0];\n';
         return "top";
       } else if (info.type=="sub-known") {
-        content += 'var win = monkey.windows.getRegistered("'+info.id+'");';
+        content += 'var win = monkey.windows.getRegistered("'+info.id+'");\n';
         return "win";
       } else if (info.type=="sub-unknown") {
-        content += 'var win = null;/* sub unknown */';
-        return "win";
+        var varname = printWinCode(info.parent);
+        content += 'var sub = monkey.windows.sub('+varname+', "'+info.xpath+'");\n';
+        return "sub";
       } else if (info.type=="tab") {
         var varname = printWinCode(info.top);
-        content += 'var tab = '+varname+'.tabs.current;';
+        content += 'var tab = '+varname+'.tabs.current;\n';
         return "tab";
       }
     }
     var winName = printWinCode(win);
-    if (win.type=="top-known") {
-      content += 'var win = monkey.windows.getRegistered("'+win.info.id+'");';
-    } else if (win.type=="sub-known") {
-      content += 'var topWin = monkey.windows.getRegistered("'+win.info.id+'");';
-      content += 'var subWin = monkey.windows.getRegistered("'+win.info.id+'", topWin);';
-      winName = "subWin";
-    } else if (win.type=="tab") {
-      content += 'var tab = monkey.windows.getRegistered("'+win.info.id+'");';
-      winName = "tab";
-    }
+    
     content += 'var element = elements.xpath('+winName+', "'+node.xpath.replace('"','\\"')+'"';
     if (node.binding)
       content += ', "'+node.binding.replace('"','\\"')+'"';

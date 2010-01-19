@@ -210,6 +210,14 @@ elementInspector.identifyWindow = function (win) {
   return null;
 }
 
+elementInspector.getWindowIdentity = function (id) {
+  for(var i=0; i<this.registeredTopWindows.length; i++) {
+    var w = this.registeredTopWindows[i];
+    if (w.id == id) return w;
+  }
+  return null;
+}
+
 elementInspector.updateNodeInfo = function (node) {
   var info = this.getNodeInfo(node);
   var html = "";
@@ -220,13 +228,15 @@ elementInspector.updateNodeInfo = function (node) {
   
   var winInfo = this.getWindowInfo(node);
   if (winInfo.type=="sub-known") {
-    html += winInfo.info.name;
+    var identity = this.getWindowIdentity(winInfo.id);
+    html += identity.name;
   } else if (winInfo.type=="sub-unknown") {
-    html += "Unknown child win";
+    html += "Unknown child win : "+winInfo.xpath;
   } else if (winInfo.type=="tab") {
     html += "Current firefox tab";
   } else if (winInfo.type=="top-known") {
-    html += winInfo.info.name;
+    var identity = this.getWindowIdentity(winInfo.id);
+    html += identity.name;
   } else if (winInfo.type=="top-unknown") {
     html += "Unknown top win";
   }
@@ -242,55 +252,57 @@ elementInspector.updateNodeInfo = function (node) {
   this.infoWin.document.body.innerHTML=html;
 }
 
-elementInspector.getNodeInfo = function (node, dontGetPreview) {
-  if (!node)
-    return null;
-  
+elementInspector.getXPath = function (elt,rootNode) {
   function isUniqueId(doc,id) {
     var results = doc.evaluate('id("'+id+'")',doc,null,Components.interfaces.nsIDOMXPathResult.ANY_TYPE, null);
     //alert(results.iterateNext()+" && "+results.iterateNext());
     return results.iterateNext() && !results.iterateNext();
   }
   
-  function getXPath(elt,rootNode) {
-    var doc = elt.ownerDocument;
-    
-    // Try to ignore dynamic generated ids like panel201392193 in <tabbrowser> ...
-    if (elt.id && !elt.id.match(/\d{5,}/) &&  isUniqueId(doc,elt.id)) {
-      return ["id('"+elt.id+"')"];
-    }
-    
-    // In case of an anonymous node
-    // Try to check if anonid attribute is unique
-    if (rootNode) {
-      var anonid = elt.getAttribute("anonid");
-      if (anonid) {
-        // Check that this node is unique
-        return [elt.tagName.replace(/^.+:/,"").toLowerCase()+"[@anonid='"+anonid+"']"];
-      }
-    }
-    
-    var path = [];
-    if (elt == doc.documentElement || elt==rootNode) {
-      path = [""]; // in order to add a '/' at xpath begin (with xpath.join('/'))
-    } else if(elt.parentNode && elt.parentNode!=rootNode) {
-      path = getXPath(elt.parentNode,rootNode);
-    }
-    
-    if(elt.previousSibling) {
-      var count = 1;
-      var sibling = elt.previousSibling
-      do {
-        if(sibling.nodeType == 1 && sibling.nodeName == elt.nodeName) {count++;}
-        sibling = sibling.previousSibling;
-      } while(sibling);
-      if(count == 1) {count = null;}
-    }
-    
-    path.push( elt.tagName.replace(/^.+:/,"").toLowerCase() + ( count ? "["+count+"]" : '[1]') );
-    
-    return path;
+  var doc = elt.ownerDocument;
+  
+  // Try to ignore dynamic generated ids like panel201392193 in <tabbrowser> ...
+  if (elt.id && !elt.id.match(/\d{5,}/) &&  isUniqueId(doc,elt.id)) {
+    return ["id('"+elt.id+"')"];
   }
+  
+  // In case of an anonymous node
+  // Try to check if anonid attribute is unique
+  if (rootNode) {
+    var anonid = elt.getAttribute("anonid");
+    if (anonid) {
+      // Check that this node is unique
+      return [elt.tagName.replace(/^.+:/,"").toLowerCase()+"[@anonid='"+anonid+"']"];
+    }
+  }
+  
+  var path = [];
+  if (elt == doc.documentElement || elt==rootNode) {
+    path = [""]; // in order to add a '/' at xpath begin (with xpath.join('/'))
+  } else if(elt.parentNode && elt.parentNode!=rootNode) {
+    path = this.getXPath(elt.parentNode,rootNode);
+  }
+  
+  if(elt.previousSibling) {
+    var count = 1;
+    var sibling = elt.previousSibling
+    do {
+      if(sibling.nodeType == 1 && sibling.nodeName == elt.nodeName) {count++;}
+      sibling = sibling.previousSibling;
+    } while(sibling);
+    if(count == 1) {count = null;}
+  }
+  
+  path.push( elt.tagName.replace(/^.+:/,"").toLowerCase() + ( count ? "["+count+"]" : '[1]') );
+  
+  return path;
+}
+
+elementInspector.getNodeInfo = function (node, dontGetPreview) {
+  if (!node)
+    return null;
+  
+  
   
   function getBoxobject(elt) {
     var boxobject = null;
@@ -329,8 +341,8 @@ elementInspector.getNodeInfo = function (node, dontGetPreview) {
   if (binding == node) binding = null;
   
   var obj = {
-    xpath : getXPath(binding?binding:node).join('/'),
-    binding : binding?getXPath(node,binding).join('/'):null
+    xpath : this.getXPath(binding?binding:node).join('/'),
+    binding : binding?this.getXPath(node,binding).join('/'):null
   };
   
   if (!dontGetPreview) {
@@ -401,7 +413,7 @@ elementInspector.getWindowInfo = function (node) {
                         .parent // .treeOwner or .parent
                         .QueryInterface(Components.interfaces.nsIInterfaceRequestor)
                         .getInterface(Components.interfaces.nsIDOMWindow);
-    
+    Components.utils.reportError("Process sub win : "+win.document.location.href);
     var winAttributes = getWindowParams(win);
     var winId = elementInspector.identifyWindow(winAttributes);
     if (winId) // Is a identified one!
@@ -410,8 +422,10 @@ elementInspector.getWindowInfo = function (node) {
     if (topWindowId=="firefox-window") {
       try {
         var gBrowser = topWindow.wrappedJSObject.gBrowser;
-        var tabIndex = gBrowser.getBrowserIndexForDocument(node.ownerDocument);
+        var tabIndex = gBrowser.getBrowserIndexForDocument(win.document);
+        if (tabIndex==-1) throw new Error("Not a tab");
         var browser = gBrowser.getBrowserAtIndex(tabIndex);
+        if (!browser) throw new Error("Unable to get related browser");
         return { 
           type:"tab", 
           info : {
@@ -426,10 +440,76 @@ elementInspector.getWindowInfo = function (node) {
         Components.utils.reportError(e);
       }
     }
-    // TODO: add info to match the related <iframe/browser> node
+    
+    var element = null;
+    
+    Components.utils.reportError("search iframe in parent : "+parentWindow.document.location.href);
+    
+    var iframes = parentWindow.document.getElementsByTagName("iframe");
+    for(var i=0; i<iframes.length; i++) {
+      var iframe=iframes[i];
+      Components.utils.reportError(iframe.contentWindow+" == "+win);
+      if (iframe.contentWindow == win) {
+        element = iframe;
+        break;
+      }
+    }
+    if (!element) {
+      var iframes = parentWindow.document.getElementsByTagName("browser");
+      for(var i=0; i<iframes.length; i++) {
+        var iframe=iframes[i];
+        Components.utils.reportError(iframe.contentWindow+" == "+win);
+        if (iframe.contentWindow == win) {
+          element = iframe;
+          break;
+        }
+      }
+    }
+    if (!element)
+      Components.utils.reportError("Unable to found matching iframe/browser !!!");
+    
+    /*
+    var parentDocshell = win.QueryInterface(Components.interfaces.nsIInterfaceRequestor)
+                        .getInterface(Components.interfaces.nsIWebNavigation)
+                        .QueryInterface(Components.interfaces.nsIDocShellTreeItem)
+                        .parent // .treeOwner or .parent
+                        .QueryInterface(Components.interfaces.nsIInterfaceRequestor)
+                        .getInterface(Components.interfaces.nsIDocShell);
+    
+    var docshell = elt.QueryInterface(Ci.nsIInterfaceRequestor)
+                           .getInterface(Ci.nsIWebNavigation)
+                           .QueryInterface(Ci.nsIDocShell);
+      if (!docshell.chromeEventHandler)
+    */
+    /*
+    var iface = Components.interfaces.nsIDocShellTreeItem;
+    var docShellEnum = parentDocshell.getDocShellEnumerator(iface.typeAll, iface.ENUMERATE_FORWARDS);
+    
+    //inspect(parentDocshell.chromeEventHandler);
+    
+    while(docShellEnum.hasMoreElements()) {
+      var docShell = docShellEnum.getNext();
+      if(docShell instanceof Components.interfaces.nsIDocShell) {
+        var domDocument = docShell.contentViewer.DOMDocument;
+        //if(domDocument instanceof HTMLDocument) {
+          Components.utils.reportError("docshell : "+docShell+" / "+domDocument);
+          if (!docShell.chromeEventHandler) {
+            inspect([docShell,domDocument]);
+            continue;
+          }
+          //if (domDocument == win.document)
+          docShell.chromeEventHandler.QueryInterface(Components.interfaces.nsIDOMElement);
+            inspect(docShell.chromeEventHandler);
+            
+        //}
+      }
+    }
+    */
+    
     return {
       type: "sub-unknown",
-      info: winAttributes,
+      win: winAttributes,
+      xpath: element?elementInspector.getXPath(element):"",
       parent : recurseOnWin(parentWindow)
     };
   }
