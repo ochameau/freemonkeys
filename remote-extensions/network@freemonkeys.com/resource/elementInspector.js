@@ -79,7 +79,7 @@ elementInspector._clickListener = function (event) {
   elementInspector.stopHighlighting();
   
   hiddenWindow.setTimeout(function () {
-    elementInspector.callback(null, null, elementInspector.getNodeInfo(elementInspector._currentOver));
+    elementInspector.callback(elementInspector.getWindowInfo(elementInspector._currentOver), elementInspector.getNodeInfo(elementInspector._currentOver));
   },100);
 }
 
@@ -205,7 +205,7 @@ elementInspector.identifyWindow = function (win) {
     if (typeof w.params.id=="string" && w.params.id!=win.id) continue;
     if (typeof w.params.name=="string" && w.params.name!=win.name) continue;
     if (typeof w.params.location=="string" && w.params.location!=win.location) continue;
-    return w;
+    return w.id;
   }
   return null;
 }
@@ -218,55 +218,21 @@ elementInspector.updateNodeInfo = function (node) {
   html += '<div style="font-weight: bold; font-size: 1em; padding-bottom: 10px;">';
   html += 'Window: ';
   
-  var identified = null;
-  var itw = this.identifyWindow(info.topWindow);
-  if (info.win) { // Is a child window of another one ?
-    var iw = this.identifyWindow(info.win);
-    if (iw) { // Is a identified one!
-      html += iw.name;
-      identified = { type:"sub-known", info : iw };
-    } else { // Try to check if this is a tab
-      var tabIndex = -1;
-      var isFirst = false, isLast = false, isCurrent = false;
-      if (itw.id=="firefox-window") {
-        try {
-          var gBrowser = info.topWindow.ref.wrappedJSObject.gBrowser;
-          tabIndex = gBrowser.getBrowserIndexForDocument(node.ownerDocument);
-          var browser = gBrowser.getBrowserAtIndex(tabIndex);
-          isFirst = tabIndex==0;
-          isLast = gBrowser.browsers.length==tabIndex+1;
-          isCurrent = gBrowser.mCurrentBrowser==browser;
-        } catch(e) {
-          Components.utils.reportError(e);
-        }
-      }
-      if (tabIndex>=0) {// Yes, it's a tab!
-        html += "Current firefox tab";
-        identified = { type:"tab", info : null };
-      } else {
-        html += "Child window with: title="+info.win.title+" name="+info.win.name+" location="+info.win.location;
-        html += "<br/>Of window : ";
-      }
-    }
+  var winInfo = this.getWindowInfo(node);
+  if (winInfo.type=="sub-known") {
+    html += winInfo.info.name;
+  } else if (winInfo.type=="sub-unknown") {
+    html += "Unknown child win";
+  } else if (winInfo.type=="tab") {
+    html += "Current firefox tab";
+  } else if (winInfo.type=="top-known") {
+    html += winInfo.info.name;
+  } else if (winInfo.type=="top-unknown") {
+    html += "Unknown top win";
   }
   
-  if (!identified) {
-    if (itw) {
-      html += itw.name+"</div>";
-      identified = { type:"top-known", info : itw };
-    } else
-      html += "id="+info.topWindow.id+" title="+info.topWindow.title+" type="+info.topWindow.type+" name="+info.topWindow.name+"</div>";
-  }
-  /*
-  if (info.opener) {
-    var io = this.identifyWindow(info.opener);
-    if (io)
-      html += "<div>Opened by window: "+io.name;
-    else
-      html += "<div>Opened by window with: id="+info.opener.id+" title="+info.opener.title+" name="+info.opener.name+"</div>";
-  }
-  */
   html += '</div>';
+  
   html += '<div style="font-weight: bold; font-size: 1em; padding-bottom: 10px;">'+info.xpath+'</div>';
   if (info.binding)
     html += '<div style="font-size: 1em; padding-bottom: 10px;">anonymous: '+info.binding+'</div>';
@@ -362,47 +328,10 @@ elementInspector.getNodeInfo = function (node, dontGetPreview) {
   }
   if (binding == node) binding = null;
   
-  var win = node.ownerDocument.defaultView;
-  
-  var topWindow = win.QueryInterface(Components.interfaces.nsIInterfaceRequestor)
-                   .getInterface(Components.interfaces.nsIWebNavigation)
-                   .QueryInterface(Components.interfaces.nsIDocShellTreeItem)
-                   .rootTreeItem
-                   .QueryInterface(Components.interfaces.nsIInterfaceRequestor)
-                   .getInterface(Components.interfaces.nsIDOMWindow);
-  var topDomWindow = topWindow.document.documentElement;
-  
   var obj = {
     xpath : getXPath(binding?binding:node).join('/'),
-    binding : binding?getXPath(node,binding).join('/'):null,
-    topWindow : {
-      ref: topWindow,
-      id: topWindow.document.documentElement.id,
-      type : topWindow.document.documentElement.getAttribute("windowtype"),
-      title : topWindow.document.title,
-      name: topWindow.name,
-      location: topWindow.document.location.href
-    }
+    binding : binding?getXPath(node,binding).join('/'):null
   };
-  
-  if (win!=topWindow) {
-    obj.win = {
-      ref: win,
-      name: win.name,
-      title: win.document.title,
-      location: win.document.location.href
-    };
-  }
-  
-  if (win.opener) {
-    obj.opener = {
-      id: win.opener.document.documentElement.id,
-      type: win.opener.document.documentElement.getAttribute("windowtype"),
-      name: win.opener.name,
-      title: win.opener.document.title,
-      location: win.opener.document.location.href
-    };
-  }
   
   if (!dontGetPreview) {
     var bo = getBoxobject(node);
@@ -415,6 +344,97 @@ elementInspector.getNodeInfo = function (node, dontGetPreview) {
   }
   
   return obj;
+}
+
+elementInspector.getWindowInfo = function (node) {
+  var win = node.ownerDocument.defaultView;
+  
+  var topWindow = win.QueryInterface(Components.interfaces.nsIInterfaceRequestor)
+                   .getInterface(Components.interfaces.nsIWebNavigation)
+                   .QueryInterface(Components.interfaces.nsIDocShellTreeItem)
+                   .rootTreeItem
+                   .QueryInterface(Components.interfaces.nsIInterfaceRequestor)
+                   .getInterface(Components.interfaces.nsIDOMWindow);
+  /*
+  // Get parent <iframe/browser> node ?
+  var parentWindow = win.QueryInterface(nsIInterfaceRequestor)
+                        .getInterface(nsIWebNavigation)
+                        .QueryInterface(nsIDocShellTreeItem)
+                        .treeOwner // or .parent
+                        .QueryInterface(nsIInterfaceRequestor)
+                        .getInterface(nsIBaseWindow);
+  */
+  
+  /*
+  // Opened by ?
+  win.opener
+  */
+  
+  function getWindowParams(win) {
+    return {
+      id: win.document.documentElement.id,
+      type: win.document.documentElement.getAttribute("windowtype"),
+      name: win.name,
+      title: win.document.title,
+      location: win.document.location.href
+    };
+  }
+  var topWindowAttributes = getWindowParams(topWindow);
+  var topWindowId = this.identifyWindow(topWindowAttributes);
+  
+  var topWindowInfo;
+  if (topWindowId)
+    topWindowInfo = { type:"top-known", id : topWindowId };
+  else
+    topWindowInfo = {
+      type: "top-unknown",
+      info: topWindowAttributes
+    };
+  
+  function recurseOnWin(win) {
+    if (win==topWindow)
+      return topWindowInfo;
+    // Is a child window of another one
+    var parentWindow = win.QueryInterface(Components.interfaces.nsIInterfaceRequestor)
+                        .getInterface(Components.interfaces.nsIWebNavigation)
+                        .QueryInterface(Components.interfaces.nsIDocShellTreeItem)
+                        .parent // .treeOwner or .parent
+                        .QueryInterface(Components.interfaces.nsIInterfaceRequestor)
+                        .getInterface(Components.interfaces.nsIDOMWindow);
+    
+    var winAttributes = getWindowParams(win);
+    var winId = elementInspector.identifyWindow(winAttributes);
+    if (winId) // Is a identified one!
+      return { type:"sub-known", id : winId, parent : recurseOnWin(parentWindow) };
+    // Try to check if this is a tab
+    if (topWindowId=="firefox-window") {
+      try {
+        var gBrowser = topWindow.wrappedJSObject.gBrowser;
+        var tabIndex = gBrowser.getBrowserIndexForDocument(node.ownerDocument);
+        var browser = gBrowser.getBrowserAtIndex(tabIndex);
+        return { 
+          type:"tab", 
+          info : {
+            isFirst: tabIndex==0,
+            isLast: (gBrowser.browsers.length==tabIndex+1),
+            isCurrent: (gBrowser.mCurrentBrowser==browser), // Obviously always true
+            index: tabIndex
+          },
+          top : topWindowInfo
+        };
+      } catch(e) {
+        Components.utils.reportError(e);
+      }
+    }
+    // TODO: add info to match the related <iframe/browser> node
+    return {
+      type: "sub-unknown",
+      info: winAttributes,
+      parent : recurseOnWin(parentWindow)
+    };
+  }
+  
+  return recurseOnWin(win);
 }
 
 elementInspector.rectToCanvas = function (wnd, x,y,w,h, maxSize) {

@@ -210,12 +210,42 @@ gFreemonkeys.selectNode = function () {
   
   window.minimize();
   
-  function onClick(win, frame, node) {
+  function onClick(win, node) {
     
     window.restore();
     
     var content = "\n";
-    content += 'var element = elements.xpath(win, "'+node.xpath.replace('"','\\"')+'"';
+    function printWinCode(info) {
+      if (info.type=="top-known") {
+        content += 'var top = monkey.windows.getRegistered("'+info.id+'");';
+        return "top";
+      } else if (info.type=="top-unknown") {
+        content += 'var top = monkey.windows.get(/*unknown*/)[0];';
+        return "top";
+      } else if (info.type=="sub-known") {
+        content += 'var win = monkey.windows.getRegistered("'+info.id+'");';
+        return "win";
+      } else if (info.type=="sub-unknown") {
+        content += 'var win = null;/* sub unknown */';
+        return "win";
+      } else if (info.type=="tab") {
+        var varname = printWinCode(info.top);
+        content += 'var tab = '+varname+'.tabs.current;';
+        return "tab";
+      }
+    }
+    var winName = printWinCode(win);
+    if (win.type=="top-known") {
+      content += 'var win = monkey.windows.getRegistered("'+win.info.id+'");';
+    } else if (win.type=="sub-known") {
+      content += 'var topWin = monkey.windows.getRegistered("'+win.info.id+'");';
+      content += 'var subWin = monkey.windows.getRegistered("'+win.info.id+'", topWin);';
+      winName = "subWin";
+    } else if (win.type=="tab") {
+      content += 'var tab = monkey.windows.getRegistered("'+win.info.id+'");';
+      winName = "tab";
+    }
+    content += 'var element = elements.xpath('+winName+', "'+node.xpath.replace('"','\\"')+'"';
     if (node.binding)
       content += ', "'+node.binding.replace('"','\\"')+'"';
     content += ');\n';
