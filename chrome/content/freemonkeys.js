@@ -1,9 +1,9 @@
 function inspect(aObject,aModal) {
   if (aObject && typeof aObject.appendChild=="function") {
-    window.openDialog("chrome://inspector/content/', '_blank",
+    window.openDialog("chrome://inspector/content/", "_blank",
               "chrome,all,dialog=no"+(aModal?",modal":""), aObject);
   } else {
-    window.openDialog("chrome://inspector/content/object.xul', '_blank",
+    window.openDialog("chrome://inspector/content/object.xul", "_blank",
               "chrome,all,dialog=no"+(aModal?",modal":""), aObject);
   }
 }
@@ -276,8 +276,8 @@ gFreemonkeys.selectNode = function () {
     if (node.binding)
       content += ', "'+node.binding.replace('"','\\"')+'"';
     content += ');\n';
-    gFreemonkeys.editor.insertIntoLine(gFreemonkeys.editor.currentLine,0, content);
-    //inspect([win,frame,node]);
+    
+    gFreemonkeys.editor.insertIntoLine(gFreemonkeys.editor.cursorPosition().line, "end", content);
     
     gFreemonkeys.focusEditor();
   }
@@ -426,6 +426,7 @@ gFreemonkeys.initEditor = function () {
       
       window.focus();
       window.setTimeout(function(){
+          //gFreemonkeys.editor.frame.contentWindow.document.body.focus();
           gFreemonkeys.editor.focus();
         },1000);
     }
