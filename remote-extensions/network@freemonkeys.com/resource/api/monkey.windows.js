@@ -1,5 +1,7 @@
 var windows = {};
 
+Components.utils.import("resource://fm-network/knownTopWindows.js");
+
 windows.MonkeyTab = 
   function MonkeyTab(gBrowser, tab) {
     var linkedBrowser = tab.linkedBrowser;
@@ -69,14 +71,20 @@ windows.MonkeyWindow =
     }
   };
 
-windows.ORDER_BY_ZORDER = 1;
-windows.ORDER_BY_CREATION_DATE = 2;
-windows.get = function (id, type, title, order) {
+windows.ORDER_BY_ZORDER = "by_zorder";
+windows.ORDER_BY_CREATION_DATE = "by_date";
+// Sorted from the last recent to the newer
+// or from the bottom to the top
+windows.getList = function (id, type, name, location, order) {
   var list = [];
   
   var wm = Components.classes["@mozilla.org/appshell/window-mediator;1"]
                    .getService(Components.interfaces.nsIWindowMediator);
-  var enumerator = wm.getXULWindowEnumerator(null);
+  var enumerator;
+  if (order==windows.ORDER_BY_CREATION_DATE)
+    enumerator = wm.getXULWindowEnumerator(type?type:null);
+  else
+    enumerator = wm.getZOrderXULWindowEnumerator(type?type:null,false);
   while(enumerator.hasMoreElements()) {
     var xulWin = enumerator.getNext().QueryInterface(Components.interfaces.nsIXULWindow);
     var requestor = xulWin.docShell.QueryInterface(Components.interfaces.nsIInterfaceRequestor);
@@ -84,24 +92,46 @@ windows.get = function (id, type, title, order) {
     var domwin = chromewin.document.documentElement;
     
     if (id && id!=domwin.id) continue;
-    if (type && type!=domwin.getAttribute("windowtype")) continue;
-    if (title && title!=domwin.getAttribute("title")) continue;
+    //if (type && type!=domwin.getAttribute("windowtype")) continue;
+    if (name && name!=chromewin.name) continue;
+    if (location && location!=chromewin.document.location.href) continue;
     
-    var zindex = xulWin.zLevel;
-    
-    list.push({zindex:zindex,win:chromewin});
+    // return only windows wrapper
+    list.push(new windows.MonkeyWindow(chromewin));
   }
   
-  // Sort the retrieved list
-  if (!order || order == monkey.windows.ORDER_BY_ZORDER) {
-    list.sort(function (a,b) {return a.zindex<b.zindex;});
-  }
-  
-  // Remove work info and return only windows wrapper
-  var result = [];
-  for(var i=0; i<list.length; i++) {
-    result.push(new windows.MonkeyWindow(list[i].win));
-  }
-  
-  return result;
+  return list;
 };
+
+windows.getByZindex = function (id, type, name, location, position) {
+  var list = windows.getList(id, type, name, location, windows.ORDER_BY_ZORDER);
+  if (position=="bottommost")
+    return list[0];
+  else if (typeof position=="number")
+    return list[position];
+  return list[list.length-1];
+}
+
+windows.getRegistered = function (id, position) {
+  var info = null;
+  for(var i=0; i<knownTopWindows.length; i++) {
+    var w = knownTopWindows[i];
+    if (w.id == id) {
+      info = w; break;
+    }
+  }
+  if (!info) throw new Error("Unknown window id : "+id);
+  var list = windows.getList(info.params.id, info.params.type, info.params.name, info.params.location, windows.ORDER_BY_ZORDER);
+  if (position=="bottommost")
+    return list[0];
+  else if (typeof position=="number")
+    return list[position];
+  return list[list.length-1];
+}
+
+windows.sub = function (parentWin, iframeXPath) {
+  var doc = parentWin.document;
+  var results = doc.evaluate(iframeXPath,doc,null,Components.interfaces.nsIDOMXPathResult.ANY_TYPE, null);
+  var iframe = results.iterateNext();
+  return new windows.MonkeyWindow(iframe.contentWindow);
+}

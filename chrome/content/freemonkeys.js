@@ -1,9 +1,9 @@
 function inspect(aObject,aModal) {
   if (aObject && typeof aObject.appendChild=="function") {
-    window.openDialog("chrome://inspector/content/", "_blank",
+    window.openDialog("chrome://inspector/content/', '_blank",
               "chrome,all,dialog=no"+(aModal?",modal":""), aObject);
   } else {
-    window.openDialog("chrome://inspector/content/object.xul", "_blank",
+    window.openDialog("chrome://inspector/content/object.xul', '_blank",
               "chrome,all,dialog=no"+(aModal?",modal":""), aObject);
   }
 }
@@ -147,7 +147,7 @@ gFreemonkeys.execute = function () {
           var l=[];
           for(var i in res.args)
             l.push("("+(typeof res.args[i])+") "+res.args[i]);
-          msg += " ( "+l.join(", ")+" )";
+          msg += " ( "+l.join(', ')+" )";
         }
         gFreemonkeys.print(type=="assert-pass"?"pass":"fail",type=="assert-pass"?"PASS":"FAIL",msg);
         var lineElement = gFreemonkeys.getLineElementFor(line);
@@ -217,18 +217,53 @@ gFreemonkeys.selectNode = function () {
     var content = "\n";
     function printWinCode(info) {
       if (info.type=="top-known") {
-        content += 'var top = monkey.windows.getRegistered("'+info.id+'");\n';
+        var position = '"topmost"';
+        if (info.position.isFirst || info.position.index==-1)
+          position = '"topmost"';
+        else if (!info.position.isFirst && info.position.isLast)
+          position = '"bottommost"';
+        else if (!info.position.isFirst && !info.position.isLast && info.position.index>=0)
+          position = info.position.index;
+        content += 'var top = monkey.windows.getRegistered("'+info.id+'", '+position+');\n';
         return "top";
       } else if (info.type=="top-unknown") {
-        content += 'var top = monkey.windows.get(/*unknown*/)[0];\n';
+        var position = '"topmost"';
+        if (info.position.isFirst || info.position.index==-1)
+          position = '"topmost"';
+        else if (!info.position.isFirst && info.position.isLast)
+          position = '"bottommost"';
+        else if (!info.position.isFirst && !info.position.isLast && info.position.index>=0)
+          position = info.position.index;
+        
+        content += 'var top = monkey.windows.getByZindex(';
+        if (info.info.id)
+          content += '"'+info.info.id+'"';
+        else 
+          content += 'null';
+        content += ', ';
+        if (info.info.type)
+          content += '"'+info.info.type+'"';
+        else 
+          content += 'null';
+        content += ', ';
+        if (info.info.name)
+          content += '"'+info.info.name+'"';
+        else 
+          content += 'null';
+        content += ', ';
+        if (info.info.location)
+          content += '"'+info.info.location+'"';
+        else 
+          content += 'null';
+        content += ', '+position+');\n';
         return "top";
       } else if (info.type=="sub-known") {
         content += 'var win = monkey.windows.getRegistered("'+info.id+'");\n';
         return "win";
       } else if (info.type=="sub-unknown") {
         var varname = printWinCode(info.parent);
-        content += 'var sub = monkey.windows.sub('+varname+', "'+info.xpath+'");\n';
-        return "sub";
+        content += 'var win = monkey.windows.sub('+varname+', "'+info.xpath+'");\n';
+        return "win";
       } else if (info.type=="tab") {
         var varname = printWinCode(info.top);
         content += 'var tab = '+varname+'.tabs.current;\n';

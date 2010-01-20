@@ -1,5 +1,7 @@
 const EXPORTED_SYMBOLS = ["elementInspector"];
 
+Components.utils.import("resource://fm-network/knownTopWindows.js");
+
 function inspect(obj) {
   var wm = Components.classes["@mozilla.org/appshell/window-mediator;1"].getService(Components.interfaces.nsIWindowMediator);
   var win = wm.getMostRecentWindow("navigator:browser");
@@ -20,7 +22,13 @@ elementInspector.startHighlighting = function (callback) {
   
   this.stopHighlighting();
   
-  infoWin = hiddenWindow.open('data:text/html;charset=utf-8,',"fm-node-info","resizable=no,scrollbars=no,status=no,width=1,height=1,popup=yes");
+  var ww = Components.classes["@mozilla.org/embedcomp/window-watcher;1"].getService(Components.interfaces.nsIWindowWatcher);
+  var infoWin = ww.openWindow(
+                null, // parent
+                "data:text/html;charset=utf-8,",
+                "fm-node-info", // name
+                "resizable=no,scrollbars=no,status=no,width=1,height=1,popup=yes", 
+                null); // arguments
   infoWin.addEventListener("load",function () {
     infoWin.document.body.innerHTML="...";
     infoWin.document.body.style.backgroundColor="transparent";
@@ -113,94 +121,9 @@ elementInspector.unhighlightNode = function (node) {
   node.style.removeProperty("border");
 }
 
-elementInspector.registeredTopWindows = [
-// Main windows:
-  { id    : "firefox-window",
-    name  : "Firefox Window",
-    params: {
-      type: "navigator:browser",
-      id  : "main-window"
-    }
-  },
-  { id    : "js-console",
-    name  : "JS Console",
-    params: {
-      type: "global:console",
-      id  : "JSConsoleWindow"
-    }
-  },
-  { id    : "dom-inspector",
-    name  : "DOM Inspector",
-    params: {
-      type: "",
-      id  : "winInspectorMain"
-    }
-  },
-// Firefox popups
-  { id    : "firefox-settings",
-    name  : "Firefox Preferences panel",
-    params: {
-      type: "Browser:Preferences",
-      id  : "BrowserPreferences"
-    }
-  },
-  { id    : "firefox-about",
-    name  : "About dialog",
-    params: {
-      type: "Browser:About",
-      id  : "aboutDialog"
-    }
-  },
-  { id    : "page-info",
-    name  : "Page info dialog",
-    params: {
-      type: "Browser:page-info",
-      id  : "main-window"
-    }
-  },
-  { id    : "download-manager",
-    name  : "Download manager",
-    params: {
-      type: "Download:Manager",
-      id  : "downloadManager"
-    }
-  },
-  { id    : "extension-manager",
-    name  : "Extension manager",
-    params: {
-      type: "Extension:Manager",
-      id  : "extensionsManager"
-    }
-  },
-  { id    : "places-manager",
-    name  : "Places manager",
-    params: {
-      type: "Places:Organizer",
-      id  : "places"
-    }
-  },
-
-// Firefox sidebars
-  { id    : "sidebar-bookmarks",
-    name  : "Bookmarks sidebar",
-    params: {
-      name: "sidebar",
-      location: "chrome://browser/content/bookmarks/bookmarksPanel.xul"
-    }
-  },
-  { id    : "sidebar-history",
-    name  : "History sidebar",
-    params: {
-      name: "sidebar",
-      location: "chrome://browser/content/history/history-panel.xul"
-    }
-  }
-  
-];
-
 elementInspector.identifyWindow = function (win) {
-  for(var i=0; i<this.registeredTopWindows.length; i++) {
-    var w = this.registeredTopWindows[i];
+  for(var i=0; i<knownTopWindows.length; i++) {
+    var w = knownTopWindows[i];
     if (typeof w.params.type=="string" && w.params.type!=win.type) continue;
     if (typeof w.params.id=="string" && w.params.id!=win.id) continue;
     if (typeof w.params.name=="string" && w.params.name!=win.name) continue;
@@ -211,8 +134,8 @@ elementInspector.identifyWindow = function (win) {
 }
 
 elementInspector.getWindowIdentity = function (id) {
-  for(var i=0; i<this.registeredTopWindows.length; i++) {
-    var w = this.registeredTopWindows[i];
+  for(var i=0; i<knownTopWindows.length; i++) {
+    var w = knownTopWindows[i];
     if (w.id == id) return w;
   }
   return null;
@@ -224,22 +147,42 @@ elementInspector.updateNodeInfo = function (node) {
   html += '<div style="font-size: 0.8em;margin-bottom: 10px;">';
   
   html += '<div style="font-weight: bold; font-size: 1em; padding-bottom: 10px;">';
+  
+  function printWindow(winInfo) {
+    if (winInfo.type=="sub-known") {
+      var identity = elementInspector.getWindowIdentity(winInfo.id);
+      html += "Child win: "+identity.name+"<br />";
+      html += "Of ";
+      printWindow(winInfo.parent);
+    } else if (winInfo.type=="sub-unknown") {
+      html += "Unknown child win: "+winInfo.xpath+" <br />";
+      html += "Of ";
+      printWindow(winInfo.parent);
+    } else if (winInfo.type=="tab") {
+      html += "Current firefox tab<br />";
+      html += "Of ";
+      printWindow(winInfo.top);
+    } else if (winInfo.type=="top-known") {
+      var identity = elementInspector.getWindowIdentity(winInfo.id);
+      html += identity.name;
+      if (winInfo.position.isFirst)
+        html += " first";
+      if (winInfo.position.isLast)
+        html += " last";
+      html += " "+winInfo.position.index+"-nth";
+    } else if (winInfo.type=="top-unknown") {
+      html += "Unknown top win : id="+winInfo.info.id+" name="+winInfo.info.name+" type="+winInfo.info.type+" location="+winInfo.info.location;
+      if (winInfo.position.isFirst)
+        html += " first";
+      if (winInfo.position.isLast)
+        html += " last";
+      html += " "+winInfo.position.index+"-nth";
+    }
+  }
   html += 'Window: ';
   
-  var winInfo = this.getWindowInfo(node);
-  if (winInfo.type=="sub-known") {
-    var identity = this.getWindowIdentity(winInfo.id);
-    html += identity.name;
-  } else if (winInfo.type=="sub-unknown") {
-    html += "Unknown child win : "+winInfo.xpath;
-  } else if (winInfo.type=="tab") {
-    html += "Current firefox tab";
-  } else if (winInfo.type=="top-known") {
-    var identity = this.getWindowIdentity(winInfo.id);
-    html += identity.name;
-  } else if (winInfo.type=="top-unknown") {
-    html += "Unknown top win";
-  }
+  printWindow(this.getWindowInfo(node));
+  
   
   html += '</div>';
   
@@ -394,13 +337,48 @@ elementInspector.getWindowInfo = function (node) {
   var topWindowAttributes = getWindowParams(topWindow);
   var topWindowId = this.identifyWindow(topWindowAttributes);
   
+  // Compute top window position
+  var wm = Components.classes["@mozilla.org/appshell/window-mediator;1"]
+                   .getService(Components.interfaces.nsIWindowMediator);
+  var enumerator = wm.getZOrderXULWindowEnumerator(topWindowAttributes.type?topWindowAttributes.type:null,true);
+  var sameTopWindows = [];
+  while(enumerator.hasMoreElements()) {
+    var xulWin = enumerator.getNext().QueryInterface(Components.interfaces.nsIXULWindow);
+    var requestor = xulWin.docShell.QueryInterface(Components.interfaces.nsIInterfaceRequestor);
+    var chromewin = requestor.getInterface(Components.interfaces.nsIDOMWindow);
+    var domwin = chromewin.document.documentElement;
+    
+    if (topWindowAttributes.id && topWindowAttributes.id!=domwin.id) continue;
+    //if (topWindowAttributes.type && topWindowAttributes.type!=domwin.getAttribute("windowtype")) continue;
+    if (topWindowAttributes.name && topWindowAttributes.name!=chromewin.name) continue;
+    if (topWindowAttributes.location && topWindowAttributes.location!=chromewin.document.location.href) continue;
+    
+    sameTopWindows.push(chromewin);
+  }
+  var zIndex = sameTopWindows.indexOf(topWindow);
+  for(var i=0; i<sameTopWindows.length; i++) {
+    var w = sameTopWindows[i];
+    if (w==topWindow) 
+      zIndex=i;
+  }
+  var position = {
+    isFirst: zIndex==0,
+    index: zIndex,
+    isLast: (zIndex==sameTopWindows.length-1)
+  };
+  //inspect([position,sameTopWindows]);
   var topWindowInfo;
   if (topWindowId)
-    topWindowInfo = { type:"top-known", id : topWindowId };
+    topWindowInfo = { 
+      type:"top-known", 
+      id: topWindowId, 
+      position: position
+    };
   else
     topWindowInfo = {
       type: "top-unknown",
-      info: topWindowAttributes
+      info: topWindowAttributes, 
+      position: position
     };
   
   function recurseOnWin(win) {
@@ -509,7 +487,7 @@ elementInspector.getWindowInfo = function (node) {
     return {
       type: "sub-unknown",
       win: winAttributes,
-      xpath: element?elementInspector.getXPath(element):"",
+      xpath: element?elementInspector.getXPath(element).join('/'):"",
       parent : recurseOnWin(parentWindow)
     };
   }
