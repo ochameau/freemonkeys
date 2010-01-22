@@ -1,14 +1,10 @@
 var log = {};
 
-log.print = function (v) {
-  listener("print",Components.stack.caller.lineNumber+1,v);
-}
-
 log.debug = function (v) {
-  listener("print",Components.stack.caller.lineNumber+1,v);
+  ___listener("debug",Components.stack.caller.lineNumber+1,"("+typeof v+") "+v);
 }
 
 log.inspect = function (v) {
-  //listener("inspect",Components.stack.caller.lineNumber+1,v);
+  //___listener("inspect",Components.stack.caller.lineNumber+1,v);
   inspect(v);
 }

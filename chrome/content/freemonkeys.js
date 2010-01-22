@@ -124,12 +124,79 @@ gFreemonkeys.getLineElementFor = function (line) {
 gFreemonkeys.addLineTooltip = function (line, classname, title, content) {
   var lineElement = this.getLineElementFor(line);
   lineElement.className=classname;
-  lineElement.setAttribute("title",'<strong class="title">'+title+'</strong><br/>'+content);
+  var timestamp = '';
+  /*
+  timestamp += <div style="position: absolute; top:0; right: 0;">';
+  timestamp += (new Date().getTime()-gFreemonkeys._testStartTime)+" ms";
+  timestamp += '</div>';
+  */
+  lineElement.setAttribute("title",timestamp+'<strong class="title">'+title+'</strong><br/>'+content);
   $(lineElement).tooltip({
     tip : '#line-tooltip',
     position: "center right",
     offset: [-2, 10]
   });
+}
+
+gFreemonkeys._testsListener = function testsListener(type, line, data) {
+  try {
+    if (type=="assert-pass" || type=="assert-fail") {
+      var msg="line "+line+": ";
+      msg += data.name;
+      if (data.args) {
+        var l=[];
+        for(var i in data.args)
+          l.push("("+(typeof data.args[i])+") "+data.args[i]);
+        msg += " ( "+l.join(', ')+" )";
+      }
+      gFreemonkeys.print(type=="assert-pass"?"pass":"fail",type=="assert-pass"?"PASS":"FAIL",msg);
+      
+      if (type=="assert-fail") {
+        var classname = type=="assert-pass"?"pass":"fail";
+        var message = '<pre class="message">';
+        message += "assert."+data.name+"(";
+        message += data.args.replace("<","&lt;").replace(">","&gt;");
+        message += ')</pre>';
+        gFreemonkeys.addLineTooltip(line,"fail",'Assert failed at line '+line,message);
+      } else {
+        var lineElement = gFreemonkeys.getLineElementFor(line);
+        lineElement.className = "pass";
+      }
+    } else if (type=="exception") {
+      gFreemonkeys.print("fail","Exception","line "+line+": "+data);
+      if (line>=0) {
+        gFreemonkeys.addLineTooltip(line,"error",'Exception at line '+line,'<pre class="message">'+data.replace("<","&lt;").replace(">","&gt;")+'</pre>');
+      } else {
+        Components.utils.reportError(data.toString());
+      }
+    } else if (type=="internal-exception") {
+      gFreemonkeys.print("fail","Internal exception",data);
+      Components.utils.reportError(data);
+    } else if (type=="error") {
+      gFreemonkeys.print("fail","Error",data);
+      Components.utils.reportError(data);
+    } else if (type=="debug") {
+      gFreemonkeys.print("debug","log",data);
+      gFreemonkeys.addLineTooltip(line,"message",'Debug message at line '+line,'<pre class="message">'+data.replace("<","&lt;").replace(">","&gt;")+'</pre>');
+    } else if (type=="screenshot") {
+      gFreemonkeys.addLineTooltip(line,"screenshot",'Screenshot at line '+line,'<img class="screenshot" src="'+data+'" />');
+    } else if (type=="inspect") {
+      gFreemonkeys.print("debug","Inspect",data);
+      inspect(data);
+    } else if (type=="start") {
+      gFreemonkeys.print("debug","Start");
+    } else if (type=="end") {
+      gFreemonkeys.print("debug","End");
+    } else if (type=="monkey") {
+      // data = launch|start|return
+    } else {
+      var message = "Unknown message, type:"+type+" data:"+data;
+      gFreemonkeys.print("debug","Internal error",message);
+      Components.utils.reportError(message);
+    }
+  } catch(e) {
+    Components.utils.reportError(e);
+  }
 }
 
 gFreemonkeys.execute = function () {
@@ -138,52 +205,17 @@ gFreemonkeys.execute = function () {
     gFreemonkeys.switchTo("report");
   var button = document.getElementById("panel-report-button");
   button.style.display="";
-  function listener(type, line, res) {
-    try {
-      if (type=="assert-pass" || type=="assert-fail") {
-        var msg="line "+line+": ";
-        msg += res.name;
-        if (res.args) {
-          var l=[];
-          for(var i in res.args)
-            l.push("("+(typeof res.args[i])+") "+res.args[i]);
-          msg += " ( "+l.join(', ')+" )";
-        }
-        gFreemonkeys.print(type=="assert-pass"?"pass":"fail",type=="assert-pass"?"PASS":"FAIL",msg);
-        var lineElement = gFreemonkeys.getLineElementFor(line);
-        lineElement.className=type=="assert-pass"?"pass":"fail";
-      } else if (type=="exception") {
-        gFreemonkeys.print("fail","Exception","line "+line+": "+res.message);
-        if (line>=0) {
-          gFreemonkeys.addLineTooltip(line,"error",'Exception at line '+line,'<pre class="message">'+res.message.replace("<","&lt;").replace(">","&gt;")+'</pre>');
-        } else {
-          Components.utils.reportError(res.message);
-        }
-      } else if (type=="print") {
-        gFreemonkeys.print("debug","log",res);
-        gFreemonkeys.addLineTooltip(line,"message",'Debug message at line '+line,'<pre class="message">'+res.replace("<","&lt;").replace(">","&gt;")+'</pre>');
-      } else if (type=="screenshot") {
-        gFreemonkeys.addLineTooltip(line,"screenshot",'Screenshot at line '+line,'<img class="screenshot" src="'+res+'" />');
-      } else if (typeof res=="object") {
-        gFreemonkeys.print("debug",type,(res.line?res.line:"?")+" - "+res.toSource());
-        inspect(res);
-      } else {
-        gFreemonkeys.print("debug",type,res?res:"");
-      }
-    } catch(e) {
-      Components.utils.reportError(e);
-    }
-  }
   
   try {
     if (!gFreemonkeys.defaultApplicationPath)
-      return listener("error",-1,"Application binary is not set, please go to the settings panel!");
+      return gFreemonkeys._testsListener("error",-1,"Application binary is not set, please go to the settings panel!");
     if (!gFreemonkeys.defaultProfilePath)
       return listener("error",-1,"Profile path is not set, please go to the settings panel!");
     
-    FreemonkeysZoo.execute(gFreemonkeys.defaultApplicationPath, gFreemonkeys.defaultProfilePath, gFreemonkeys.editor.getCode(), listener);
+    gFreemonkeys._testStartTime = new Date().getTime();
+    FreemonkeysZoo.execute(gFreemonkeys.defaultApplicationPath, gFreemonkeys.defaultProfilePath, gFreemonkeys.editor.getCode(), gFreemonkeys._testsListener);
   } catch(e) {
-    listener("exception",-1,{message:"Internal error : "+e,e:e});
+    gFreemonkeys._testsListener("internal-exception",-1,e.toString());
   }
 }
 

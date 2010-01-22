@@ -18,6 +18,7 @@ var macro = {};
 
 macro.execute = function (code, listener) {
 try {
+  listener("start",null,null);
   var garden = Components.utils.Sandbox(this.__parent__);//"http://localhost.localdomain.:0/");
   garden.__proto__ = this.__parent__.wrappedJSObject?this.__parent__.wrappedJSObject:this.__parent__;
   
@@ -27,9 +28,9 @@ try {
   garden.monkey = {};
   
   garden.___api_exception = function (exception) {
-    listener("exception",Components.stack.caller.caller.lineNumber+1,{message:Components.stack.caller.name+" : "+exception,e:exception});
+    listener("exception",Components.stack.caller.caller.lineNumber+1,Components.stack.caller.name+" : "+exception);
   }
-  garden.listener = listener;
+  garden.___listener = listener;
   
   // Some usefull functions in global context
   garden.setInterval = function (f,t) {hiddenWindow.setInterval(f,t)};
@@ -50,12 +51,9 @@ try {
   loader.loadSubScript("resource://fm-network/api/elements.js", garden);
   
   try {
-    Components.utils.reportError("start");
     var result = Components.utils.evalInSandbox(code, garden, "1.8", "test-buffer", 0);
-    Components.utils.reportError("end");
   } catch(e) {
-    Components.utils.reportError("ex");
-    //inspect(e);
+    // Try to find the related line in the test which ends to this exception
     var line = -1;
     if (e.location || (e.fileName && typeof e.lineNumber=="number")) {
       var s=e.location || {filename:e.fileName,lineNumber:e.lineNumber};
@@ -66,13 +64,13 @@ try {
       if (s && s.filename=="test-buffer")
         line = s.lineNumber+1;
     }
-    listener("exception",line,{message:""+e,exception:e});
-    Components.utils.reportError(e+"\n"+e.stack);
+    listener("exception",line,e.toString());
+    Components.utils.reportError("Test exception : \n"+e+"\n"+e.stack);
   }
-  listener("execute",-1,"end");
+  listener("end",null,null);
 } catch(e) {
-  listener("exception",-1,{message:""+e,exception:e});
-  Components.utils.reportError(e);
+  listener("internal-exception",-1,e.toString());
+  Components.utils.reportError("Internal exception during test :\n"+e+"\n"+e.stack);
 }
 }
 
@@ -195,39 +193,6 @@ macro.close_session = function () {
   },500);
 }
 
-macro.click = function (action, callback, count) {
-  try {
-    var node = this.getElement(action.node);
-    if (!node) {
-      if (count>70) {
-        return callback(false,{msg:"Unable to find node"});
-      }
-      hiddenWindow.setTimeout(function () {
-        macro.click(action, callback, count?count+1:1);
-      }, 100);
-      return;
-    }
-    
-    var button = 0;
-    var name = "click";
-    if (action.type=="middle")
-      button = 1;
-    else if (action.type=="right")
-      button = 2;
-    else if (action.type=="double")
-      name = "dblclick";
-    
-    var event = node.ownerDocument.createEvent("MouseEvents");
-    event.initMouseEvent(name, true, true, node.ownerDocument.defaultView,
-      0, 0, 0, 0, 0, false, false, false, false, button, null);
-    
-    node.dispatchEvent(event);
-    callback(true,null);
-  } catch(e) {
-    //alert(e+"\n"+e.stack);
-    callback(false,{msg:e.toString()});
-  }
-}
 
 macro.keypress = function (action, callback, count) {
   try {
@@ -244,61 +209,7 @@ macro.keypress = function (action, callback, count) {
     
     hiddenWindow.setTimeout(function(){
   
-    var keyCodes = action.keys;
-    for(var i=0; i<keyCodes.length; i++) {
-      
-      var code = parseInt(keyCodes.charCodeAt(i));
-      /*
-      var event = node.ownerDocument.createEvent("KeyboardEvent");
-      event.initKeyEvent(                                                                                      
-                     "keydown",        //  in DOMString typeArg,                                                           
-                      true,             //  in boolean canBubbleArg,                                                        
-                      true,             //  in boolean cancelableArg,                                                       
-                      null,             //  in nsIDOMAbstractView viewArg,  Specifies UIEvent.view. This value may be null.     
-                      false,            //  in boolean ctrlKeyArg,                                                               
-                      false,            //  in boolean altKeyArg,                                                        
-                      false,            //  in boolean shiftKeyArg,                                                      
-                      false,            //  in boolean metaKeyArg,                                                       
-                      code,               //  in unsigned long keyCodeArg,                                                      
-                      code);              //  in unsigned long charCodeArg)
-      node.dispatchEvent(event);
-      */
-      var event = node.ownerDocument.createEvent("KeyboardEvent");
-      event.initKeyEvent(                                                                                      
-                     "keypress",        //  in DOMString typeArg,                                                           
-                      true,             //  in boolean canBubbleArg,                                                        
-                      true,             //  in boolean cancelableArg,                                                       
-                      null,             //  in nsIDOMAbstractView viewArg,  Specifies UIEvent.view. This value may be null.     
-                      false,            //  in boolean ctrlKeyArg,                                                               
-                      false,            //  in boolean altKeyArg,                                                        
-                      false,            //  in boolean shiftKeyArg,                                                      
-                      false,            //  in boolean metaKeyArg,                                                       
-                      null,               //  in unsigned long keyCodeArg,                                                      
-                      code);              //  in unsigned long charCodeArg)
-      node.dispatchEvent(event);
-      
-      //node.value += keyCodes.charAt(i); 
-      /*
-      var event = node.ownerDocument.createEvent("KeyboardEvent");
-      event.initKeyEvent(                                                                                      
-                     "keyup",        //  in DOMString typeArg,                                                           
-                      true,             //  in boolean canBubbleArg,                                                        
-                      true,             //  in boolean cancelableArg,                                                       
-                      null,             //  in nsIDOMAbstractView viewArg,  Specifies UIEvent.view. This value may be null.     
-                      false,            //  in boolean ctrlKeyArg,                                                               
-                      false,            //  in boolean altKeyArg,                                                        
-                      false,            //  in boolean shiftKeyArg,                                                      
-                      false,            //  in boolean metaKeyArg,                                                       
-                      code,               //  in unsigned long keyCodeArg,                                                      
-                      code);              //  in unsigned long charCodeArg)
-      node.dispatchEvent(event);*/
-      /*
-      var event = document.createEvent('HTMLEvents');
-      event.initEvent("change", true, true);
-      node.dispatchEvent(event);
-      */
-      dump("keypress event : "+code+"\n");
-    }
+    
     
     callback(true,null);
     

@@ -293,7 +293,7 @@ FreemonkeysZoo.execute = function (application, profile, code, listener) {
     if (FreemonkeysZoo._pens[application] && FreemonkeysZoo._pens[application][profile])
       return onMonkeyAlive(FreemonkeysZoo._pens[application][profile]);
     
-    listener("monkey",-1,"start a new one");
+    listener("monkey",-1,"launch");
     var port = gPortNumber++;
     
     Application.start(application, profile, port);
@@ -307,12 +307,10 @@ FreemonkeysZoo.execute = function (application, profile, code, listener) {
           onMonkeyAlive(res);
         } else {
           error = res.msg;
-          listener("error",-1,"Error during monkey creation : "+res.msg);
+          listener("internal-exception",-1,"Error during monkey creation : "+res.msg);
         }
       });
     
-    // TODO: add timeout
-    //listener("error",-1,"Monkey creation timeout !?");
   }
   
   FreemonkeysZoo.prepareProfile(profile);
@@ -322,7 +320,7 @@ FreemonkeysZoo.execute = function (application, profile, code, listener) {
         "execute",
         [code, listener],
         function (res) {
-          listener("debug",-1,"distant execute returned.");
+          listener("monkey",-1,"return");
         }
       );
   });

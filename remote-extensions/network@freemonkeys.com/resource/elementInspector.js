@@ -391,7 +391,7 @@ elementInspector.getWindowInfo = function (node) {
                         .parent // .treeOwner or .parent
                         .QueryInterface(Components.interfaces.nsIInterfaceRequestor)
                         .getInterface(Components.interfaces.nsIDOMWindow);
-    Components.utils.reportError("Process sub win : "+win.document.location.href);
+    
     var winAttributes = getWindowParams(win);
     var winId = elementInspector.identifyWindow(winAttributes);
     if (winId) // Is a identified one!
