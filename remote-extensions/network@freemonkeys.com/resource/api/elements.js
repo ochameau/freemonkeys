@@ -152,7 +152,7 @@ elements.MonkeyElement =
                           code);              //  in unsigned long charCodeArg)
           node.dispatchEvent(event);
           
-          //node.value += keyCodes.charAt(i); 
+          //node.value += text.charAt(i); 
           
           var event = node.ownerDocument.createEvent("KeyboardEvent");
           event.initKeyEvent(                                                                                      
@@ -168,7 +168,7 @@ elements.MonkeyElement =
                           code);              //  in unsigned long charCodeArg)
           node.dispatchEvent(event);
           /*
-          var event = document.createEvent('HTMLEvents');
+          var event = node.ownerDocument.createEvent('HTMLEvents');
           event.initEvent("change", true, true);
           node.dispatchEvent(event);
           */

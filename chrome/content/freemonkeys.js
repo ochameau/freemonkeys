@@ -304,9 +304,11 @@ gFreemonkeys.selectNode = function () {
     }
     var winName = printWinCode(win);
     
-    content += 'var element = elements.xpath('+winName+', "'+node.xpath.replace('"','\\"')+'"';
-    if (node.binding)
-      content += ', "'+node.binding.replace('"','\\"')+'"';
+    if (node.anonymous) {
+      content += 'var element = elements.xblpath('+winName+', ["'+node.xpath.replace('"','\\"')+'", "'+node.anonymous.join('", "')+'"]';
+    } else {
+      content += 'var element = elements.xpath('+winName+', "'+node.xpath.replace('"','\\"')+'"';
+    }
     content += ');\n';
     
     gFreemonkeys.editor.insertIntoLine(gFreemonkeys.editor.cursorPosition().line, "end", content);

@@ -213,9 +213,12 @@ elementInspector.getXPath = function (elt,rootNode) {
   // Try to check if anonid attribute is unique
   if (rootNode) {
     var anonid = elt.getAttribute("anonid");
-    if (anonid) {
-      // Check that this node is unique
-      return [elt.tagName.replace(/^.+:/,"").toLowerCase()+"[@anonid='"+anonid+"']"];
+    if (anonid) { 
+      // TODO: Check that this node is unique
+      var root = "//";
+      if (elt.parentNode == doc.documentElement || elt.parentNode==rootNode)
+        root = "/";
+      return [root+elt.tagName/*.replace(/^.+:/,"")*/.toLowerCase()+"[@anonid='"+anonid+"']"];
     }
   }
   
@@ -236,7 +239,7 @@ elementInspector.getXPath = function (elt,rootNode) {
     if(count == 1) {count = null;}
   }
   
-  path.push( elt.tagName.replace(/^.+:/,"").toLowerCase() + ( count ? "["+count+"]" : '[1]') );
+  path.push( elt.tagName/*.replace(/^.+:/,"")*/.toLowerCase() + ( count ? "["+count+"]" : '[1]') );
   
   return path;
 }
@@ -277,28 +280,36 @@ elementInspector.getNodeInfo = function (node, dontGetPreview) {
     return boxobject;
   }
   
+  var result = {};
+  
+  var anonymous = [];
   var binding = node;
-  while(binding.ownerDocument.getBindingParent(binding)) {
-    binding = binding.ownerDocument.getBindingParent(binding);
+  var doc = binding.ownerDocument; 
+  while(doc.getBindingParent(binding)) {
+    var newBinding = doc.getBindingParent(binding);
+    if (doc.getAnonymousNodes(newBinding)) {
+      // Weird thing on xul:textbox, default label is an anonymous <html:div> node (child of <html:input>)
+      // which isn't retrieved by document.getAnonymousNode !?!
+      anonymous.unshift(this.getXPath(binding,newBinding).join('/'));
+    }
+    binding = newBinding;
   }
   if (binding == node) binding = null;
+  else result.anonymous = anonymous;
   
-  var obj = {
-    xpath : this.getXPath(binding?binding:node).join('/'),
-    binding : binding?this.getXPath(node,binding).join('/'):null
-  };
+  result.xpath = this.getXPath(binding?binding:node).join('/');
   
   if (!dontGetPreview) {
     var bo = getBoxobject(node);
     var sc = this.rectToCanvas(node.ownerDocument.defaultView,bo.x,bo.y,bo.width,bo.height);
-    obj.preview = {
+    result.preview = {
       data : sc.canvas.toDataURL("image/png", ""),
       width : sc.width,
       height : sc.height
     };
   }
   
-  return obj;
+  return result;
 }
 
 elementInspector.getWindowInfo = function (node) {
@@ -421,7 +432,7 @@ elementInspector.getWindowInfo = function (node) {
     
     var element = null;
     
-    Components.utils.reportError("search iframe in parent : "+parentWindow.document.location.href);
+    //Components.utils.reportError("search iframe in parent : "+parentWindow.document.location.href);
     
     var iframes = parentWindow.document.getElementsByTagName("iframe");
     for(var i=0; i<iframes.length; i++) {

@@ -17,5 +17,5 @@
 - fix editor focus when coming back from a node selection,
 in fact, the problem exist as the program start ... we can delete lines before any character is typed,
 no matter what .focus() function we call :/
-
+- highlight all nodes, on each action (click, type, screenshot, ...)
 
