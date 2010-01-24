@@ -30,9 +30,15 @@ elementInspector.startHighlighting = function (callback) {
                 "resizable=no,scrollbars=no,status=no,width=1,height=1,popup=yes", 
                 null); // arguments
   infoWin.addEventListener("load",function () {
-    infoWin.document.body.innerHTML="...";
-    infoWin.document.body.style.backgroundColor="transparent";
     var width = 400; var height = 200;
+    infoWin.document.body.innerHTML="...";
+    infoWin.document.body.style.backgroundColor="#ddd";
+    infoWin.document.body.style.border="1px solid black";
+    infoWin.document.body.style.padding="0";
+    infoWin.document.body.style.margin="0";
+    infoWin.document.body.style.overflow="auto";
+    infoWin.document.body.style.height=height+"px";
+    
     infoWin.resizeTo(400,200);
     infoWin.moveTo(hiddenWindow.screen.availWidth-width-20,hiddenWindow.screen.availHeight-height-20);
   },false);
@@ -164,12 +170,14 @@ elementInspector.updateNodeInfo = function (node) {
       printWindow(winInfo.top);
     } else if (winInfo.type=="top-known") {
       var identity = elementInspector.getWindowIdentity(winInfo.id);
-      html += identity.name;
       if (winInfo.position.isFirst)
-        html += " first";
-      if (winInfo.position.isLast)
-        html += " last";
-      html += " "+winInfo.position.index+"-nth";
+        html += "topmost";
+      else if (winInfo.position.isLast)
+        html += "bottommost";
+      else
+        html += winInfo.position.index+"-nth";
+      html += " "+identity.name;
+      
     } else if (winInfo.type=="top-unknown") {
       html += "Unknown top win : id="+winInfo.info.id+" name="+winInfo.info.name+" type="+winInfo.info.type+" location="+winInfo.info.location;
       if (winInfo.position.isFirst)

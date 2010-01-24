@@ -39,6 +39,12 @@ var gFreemonkeys = {
     return this.reportList;
   },
   
+  get reportLine () {
+    delete this.reportLine;
+    this.reportLine = document.getElementById("report-line");
+    return this.reportLine;
+  },
+  
   get prefs () {
     delete this.prefs;
     var prefs = Components.classes["@mozilla.org/preferences-service;1"].getService(Components.interfaces.nsIPrefService);
@@ -158,9 +164,15 @@ gFreemonkeys._testsListener = function testsListener(type, line, data) {
         message += data.args.replace("<","&lt;").replace(">","&gt;");
         message += ')</pre>';
         gFreemonkeys.addLineTooltip(line,"fail",'Assert failed at line '+line,message);
+        if (!gFreemonkeys._gotErrors) {
+          gFreemonkeys._gotErrors = true;
+          gFreemonkeys.reportLine.setAttribute("status","failed");
+          gFreemonkeys.reportLine.innerHTML = "Assert failed at line "+line+": "+message;
+        }
       } else {
         var lineElement = gFreemonkeys.getLineElementFor(line);
         lineElement.className = "pass";
+        gFreemonkeys._successCount++;
       }
     } else if (type=="exception") {
       gFreemonkeys.print("fail","Exception","line "+line+": "+data);
@@ -169,12 +181,27 @@ gFreemonkeys._testsListener = function testsListener(type, line, data) {
       } else {
         Components.utils.reportError(data.toString());
       }
+      if (!gFreemonkeys._gotErrors) {
+        gFreemonkeys._gotErrors = true;
+        gFreemonkeys.reportLine.setAttribute("status","failed");
+        gFreemonkeys.reportLine.innerHTML = "Exception at line "+line+": "+data;
+      }
     } else if (type=="internal-exception") {
       gFreemonkeys.print("fail","Internal exception",data);
       Components.utils.reportError(data);
+      if (!gFreemonkeys._gotErrors) {
+        gFreemonkeys._gotErrors = true;
+        gFreemonkeys.reportLine.setAttribute("status","failed");
+        gFreemonkeys.reportLine.innerHTML = "Internal exception: "+data;
+      }
     } else if (type=="error") {
       gFreemonkeys.print("fail","Error",data);
       Components.utils.reportError(data);
+      if (!gFreemonkeys._gotErrors) {
+        gFreemonkeys._gotErrors = true;
+        gFreemonkeys.reportLine.setAttribute("status","failed");
+        gFreemonkeys.reportLine.innerHTML = "Error: "+data;
+      }
     } else if (type=="debug") {
       gFreemonkeys.print("debug","log",data);
       gFreemonkeys.addLineTooltip(line,"message",'Debug message at line '+line,'<pre class="message">'+data.replace("<","&lt;").replace(">","&gt;")+'</pre>');
@@ -187,6 +214,10 @@ gFreemonkeys._testsListener = function testsListener(type, line, data) {
       gFreemonkeys.print("debug","Start");
     } else if (type=="end") {
       gFreemonkeys.print("debug","End");
+      if (!gFreemonkeys._gotErrors) {
+        gFreemonkeys.reportLine.setAttribute("status","success");
+        gFreemonkeys.reportLine.innerHTML = "Test succeeded with "+gFreemonkeys._successCount+" asserts";
+      }
     } else if (type=="monkey") {
       // data = launch|start|return
     } else {
@@ -206,6 +237,12 @@ gFreemonkeys.execute = function () {
   var button = document.getElementById("panel-report-button");
   button.style.display="";
   
+  gFreemonkeys.reportLine.style.display="";
+  gFreemonkeys.reportLine.setAttribute("status","in-process");
+  gFreemonkeys.reportLine.innerHTML = "Executing test";
+  gFreemonkeys._gotErrors = false;
+  gFreemonkeys._successCount = 0;
+  
   try {
     if (!gFreemonkeys.defaultApplicationPath)
       return gFreemonkeys._testsListener("error",-1,"Application binary is not set, please go to the settings panel!");
@@ -220,28 +257,6 @@ gFreemonkeys.execute = function () {
 }
 
 gFreemonkeys.selectNode = function () {
-  /*
-  // Nothing works to restore our window on top of all other applications :/
-  
-  var baseWin = window.QueryInterface(Components.interfaces.nsIInterfaceRequestor)
-                                        .getInterface(Components.interfaces.nsIWebNavigation)
-                                        .QueryInterface(Components.interfaces.nsIDocShell)
-                                        .QueryInterface(Components.interfaces.nsIDocShellTreeItem)
-                                        .treeOwner
-                                        .QueryInterface(Components.interfaces.nsIBaseWindow);
-  baseWin.enabled=false;
-  baseWin.visibility=false;
-  var xulwin = window.QueryInterface(Components.interfaces.nsIInterfaceRequestor)
-          .getInterface(Components.interfaces.nsIWebNavigation)
-          .QueryInterface(Components.interfaces.nsIDocShellTreeItem)
-          .treeOwner
-          .QueryInterface(Components.interfaces.nsIInterfaceRequestor)
-          .getInterface(Components.interfaces.nsIXULWindow);
-  xulwin.zLevel = xulwin.highestZ;
-  */
-  
-  window.minimize();
-  
   function onClick(win, node) {
     
     window.restore();
@@ -315,7 +330,30 @@ gFreemonkeys.selectNode = function () {
     
     gFreemonkeys.focusEditor();
   }
-  FreemonkeysZoo.selectNode(gFreemonkeys.defaultApplicationPath, gFreemonkeys.defaultProfilePath, onClick);
+  var alive = FreemonkeysZoo.selectNode(gFreemonkeys.defaultApplicationPath, gFreemonkeys.defaultProfilePath, onClick);
+  if (!alive) return;
+  /*
+  // Nothing works to restore our window on top of all other applications :/
+  
+  var baseWin = window.QueryInterface(Components.interfaces.nsIInterfaceRequestor)
+                                        .getInterface(Components.interfaces.nsIWebNavigation)
+                                        .QueryInterface(Components.interfaces.nsIDocShell)
+                                        .QueryInterface(Components.interfaces.nsIDocShellTreeItem)
+                                        .treeOwner
+                                        .QueryInterface(Components.interfaces.nsIBaseWindow);
+  baseWin.enabled=false;
+  baseWin.visibility=false;
+  var xulwin = window.QueryInterface(Components.interfaces.nsIInterfaceRequestor)
+          .getInterface(Components.interfaces.nsIWebNavigation)
+          .QueryInterface(Components.interfaces.nsIDocShellTreeItem)
+          .treeOwner
+          .QueryInterface(Components.interfaces.nsIInterfaceRequestor)
+          .getInterface(Components.interfaces.nsIXULWindow);
+  xulwin.zLevel = xulwin.highestZ;
+  */
+  
+  window.minimize();
+  
 }
 
 gFreemonkeys.freeTheMonkey = function () {

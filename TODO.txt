@@ -18,4 +18,5 @@
 in fact, the problem exist as the program start ... we can delete lines before any character is typed,
 no matter what .focus() function we call :/
 - highlight all nodes, on each action (click, type, screenshot, ...)
+- type why keydown/up/press doesn't work on xul:textbox
 

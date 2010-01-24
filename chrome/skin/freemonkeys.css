@@ -89,6 +89,28 @@ body {
 /******************************/
 /*   EDIT PANEL               */
 
+#panel-edit #report-line {
+  padding-left: 2.2em;
+  height: 1.5em;
+  font-family: verdana;
+  line-height: 1.5em;
+  background-repeat: no-repeat;
+  background-position: 5px 0;
+  font-weight: bold;
+}
+
+#panel-edit #report-line[status="in-process"] {
+  background-image: url('throbber-24.gif');
+}
+
+#panel-edit #report-line[status="failed"] {
+  background-image: url('tools-report-bug.png');
+}
+
+#panel-edit #report-line[status="success"] {
+  background-image: url('dialog-ok-apply.png');
+}
+
 #panel-edit .CodeMirror-line-numbers-layer {
   bottom: 0;
   height: auto !important;

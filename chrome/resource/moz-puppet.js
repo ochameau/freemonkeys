@@ -220,6 +220,20 @@ var PuppetNetworkAPI = {
 
 function PuppetConnexion() {}
 
+PuppetConnexion.prototype.isAlive = function () {
+  if (!this.transport) return false;
+  if (this._closed) return false;
+  try {
+    if (!this.transport.isAlive()) {
+      this.close();
+      return false;
+    }
+  } catch(e) {
+    return false;
+  }
+  return true;
+} 
+
 PuppetConnexion.prototype.connect = function (host, port, callback, count)
 {
   try {

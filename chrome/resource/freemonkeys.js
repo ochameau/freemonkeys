@@ -89,78 +89,6 @@ Application.connect = function (host, port, profile, callback) {
     });
 }
 
-function MonkeyTab(gBrowser, tab) {
-  var linkedBrowser = tab.linkedBrowser;
-  this.open = function (url) {
-    linkedBrowser.loadURI(url,null,null);
-  }
-  this.close = function () {
-    gBrowser.removeTab(tab);
-  }
-  this.back = function () {
-    linkedBrowser.webNavigation.goBack();
-  }
-  this.forward = function () {
-    linkedBrowser.webNavigation.goForward();
-  }
-  this.getInternal = function () {
-    return tab;
-  }
-}
-
-function MonkeyWindow(win) {
-  this.win = win;
-  var gBrowser = win.gBrowser;
-  
-  this.tabs = {
-    new : function (url, doNotSelect) {
-      if (!url) url="about:blank";
-      var tab = gBrowser.addTab(url);
-      if (!doNotSelect)
-        gBrowser.selectedTab = tab;
-      return new MonkeyTab(gBrowser, tab);
-    },
-    get current() {
-      return new MonkeyTab(gBrowser, gBrowser.selectedTab);
-    }
-  }
-}
-
-function Monkey(puppet, macro, listener) {
-  this.puppet = puppet;
-  this.macro = macro;
-  var syncMacro = puppet.blocking.getValue("macro");
-  this.syncMacro = syncMacro;
-  
-  this.windows = {
-    get : function (id, name, title, order) {
-      // Remote call
-      var list = syncMacro.getWindows();
-      
-      // Sort the retrieved list
-      if (!order || order == Monkey.WINDOWS_ORDER_BY_ZORDER) {
-        list.sort(function (a,b) {return a.zindex<b.zindex;});
-      }
-      
-      // Remove work info and return only windows references
-      var result = [];
-      for(var i=0; i<list.length; i++) {
-        result.push(new MonkeyWindow(list[i].win));
-      }
-      
-      return result;
-      
-    }
-  }
-}
-Monkey.WINDOWS_ORDER_BY_ZORDER = 1;
-Monkey.WINDOWS_ORDER_BY_CREATION_DATE = 2;
-
-
-Monkey.prototype.free = function () {
-  this.syncMacro.quit();
-  this.puppet.close();
-}
 
 
 const FreemonkeysZoo = {};
@@ -196,13 +124,14 @@ FreemonkeysZoo.free = function (application, profile) {
 }
 
 FreemonkeysZoo.selectNode = function (application, profile, onClick) {
-  var monkey = FreemonkeysZoo._pens[application][profile];
-  if (!monkey) return;
+  var monkey = FreemonkeysZoo._pens[application]?FreemonkeysZoo._pens[application][profile]:null;
+  if (!monkey || !monkey.puppet.isAlive()) return false;
   monkey.asyncMacro.execObjectFunction(
       "selectNode",
       [onClick],
       function (res) {}
     );
+  return true;
 }
 
 FreemonkeysZoo.writeToFile = function (file, data) {
@@ -290,12 +219,17 @@ var gPortNumber = 9000;
 FreemonkeysZoo.execute = function (application, profile, code, listener) {
   
   function getMonkey(onMonkeyAlive) {
-    if (FreemonkeysZoo._pens[application] && FreemonkeysZoo._pens[application][profile])
-      return onMonkeyAlive(FreemonkeysZoo._pens[application][profile]);
+    if (FreemonkeysZoo._pens[application] && FreemonkeysZoo._pens[application][profile]) {
+      if (FreemonkeysZoo._pens[application][profile].puppet.isAlive())
+        return onMonkeyAlive(FreemonkeysZoo._pens[application][profile]);
+      else
+        delete FreemonkeysZoo._pens[application][profile];
+    }
     
     listener("monkey",-1,"launch");
     var port = gPortNumber++;
     
+    FreemonkeysZoo.prepareProfile(profile);
     Application.start(application, profile, port);
     
     Application.connect("localhost", port, profile, 
@@ -313,7 +247,6 @@ FreemonkeysZoo.execute = function (application, profile, code, listener) {
     
   }
   
-  FreemonkeysZoo.prepareProfile(profile);
   getMonkey(function (monkey) {
     listener("monkey",-1,"ready");
     monkey.asyncMacro.execObjectFunction(
