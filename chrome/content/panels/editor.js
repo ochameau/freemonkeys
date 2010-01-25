@@ -69,7 +69,7 @@ gFMEditor.cleanLinesStates = function () {
 // Line start at 1
 gFMEditor.setLineClass = function (line, classname) {
   var lineElement = this.getLineElementFor(line);
-  lineElement.className="to-"+classname;
+  lineElement.className=classname;
 }
 
 // Line start at 1
