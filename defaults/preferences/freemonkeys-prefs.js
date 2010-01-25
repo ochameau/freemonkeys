@@ -22,3 +22,5 @@ pref("freemonkeys.paths.application", "");
 pref("freemonkeys.paths.profile", "");
 
 pref("freemonkeys.settings.auto-switch-to-report", true);
+
+pref("freemonkeys.settings.current-file", null);

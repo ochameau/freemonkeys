@@ -74,7 +74,26 @@ var gFreemonkeys = {
       gFreemonkeys.prefs.setBoolPref("settings.auto-switch-to-report",v);
       return v;
     }
-  }
+  },
+  get currentFile () {
+    try {
+      return this.prefs.getComplexValue("current-file", Components.interfaces.nsILocalFile);
+    } catch(e) {
+      return null;
+    }
+  },
+  set currentFile (v) {
+    if (!v) {
+      window.document.title="Freemonkey - new file";
+      try {
+        this.prefs.clearUserPref("current-file");
+        return v;
+      } catch(e) {}
+    }
+    window.document.title="Freemonkey - "+v.leafName;
+    this.prefs.setComplexValue("current-file", Components.interfaces.nsILocalFile, v);
+    return v;
+  },
 };
 
 gFreemonkeys.switchTo = function (panelName) {
@@ -360,15 +379,53 @@ gFreemonkeys.freeTheMonkey = function () {
   FreemonkeysZoo.free(gFreemonkeys.defaultApplicationPath, gFreemonkeys.defaultProfilePath);
 }
 
-gFreemonkeys.getLastSessionFile = function () {
+gFreemonkeys.getLastBufferFile = function () {
   var file = Components.classes["@mozilla.org/file/directory_service;1"]
          .getService(Components.interfaces.nsIProperties)
          .get("ProfD", Components.interfaces.nsIFile);
-  file.append("last-session.test.js");
+  file.append("buffer.test.js");
   return file;
 }
 
-gFreemonkeys.readFile = function (file) {
+gFreemonkeys.new = function () {
+  this.currentFile = null;
+  this.editor.setCode("\n\n\n");
+  this.focusEditor();
+}
+
+gFreemonkeys.load = function () {
+  var nsIFilePicker = Components.interfaces.nsIFilePicker;
+  var fp = Components.classes["@mozilla.org/filepicker;1"].createInstance(nsIFilePicker);
+  fp.init(window, "Freemonkey test script", nsIFilePicker.modeOpen);
+  fp.appendFilter("Freemonkey test scripts","*.js");
+  
+  var rv = fp.show();
+  if (rv == nsIFilePicker.returnOK) {
+    this.currentFile = fp.file;
+    this.loadFromFile(this.currentFile);
+  }
+}
+
+gFreemonkeys.save = function () {
+  var current = this.currentFile;
+  if (current) {
+    this.saveToFile(current);
+    return;
+  }
+  var nsIFilePicker = Components.interfaces.nsIFilePicker;
+  var fp = Components.classes["@mozilla.org/filepicker;1"].createInstance(nsIFilePicker);
+  fp.init(window, "Profile folder", nsIFilePicker.modeSave);
+  fp.appendFilter("Freemonkey test scripts","*.js");
+  //fp.appendFilters(nsIFilePicker.filterAll);
+  
+  var rv = fp.show();
+  if (rv == nsIFilePicker.returnOK || rv == nsIFilePicker.returnReplace) {
+    this.currentFile = fp.file;
+    this.saveToFile(fp.file);
+  }
+}
+
+gFreemonkeys.getFileContent = function (file) {
   var fileContents = "";
   var fstream = Components.classes["@mozilla.org/network/file-input-stream;1"].
   createInstance(Components.interfaces.nsIFileInputStream);
@@ -386,7 +443,7 @@ gFreemonkeys.readFile = function (file) {
   return fileContents;
 }
 
-gFreemonkeys.saveFile = function (file, str) {
+gFreemonkeys.saveContentToFile = function (file, str) {
   var foStream = Components.classes["@mozilla.org/network/file-output-stream;1"]
                  .createInstance(Components.interfaces.nsIFileOutputStream);
   foStream.init(file, 0x02 | 0x08 | 0x20, 0664, 0);   // write, create, truncate
@@ -394,16 +451,33 @@ gFreemonkeys.saveFile = function (file, str) {
   foStream.close();
 }
 
-gFreemonkeys.restorePreviousSession = function () {
-  var file = this.getLastSessionFile();
+gFreemonkeys.loadFromFile = function (file) {
   if (!file.exists()) return;
-  var content = this.readFile(file);
+  var content = this.getFileContent(file);
   this.editor.setCode(content);
+  this.focusEditor();
 }
-gFreemonkeys.saveSession = function () {
+
+gFreemonkeys.saveToFile = function (file) {
   var content = this.editor.getCode();
-  var file = this.getLastSessionFile();
-  this.saveFile(file,content);
+  this.saveContentToFile(file,content);
+}
+
+gFreemonkeys.restorePreviousSession = function () {
+  var current = this.currentFile;
+  if (current) {
+    this.currentFile = current;
+    this.loadFromFile(current);
+  } else {
+    this.currentFile = null;
+    this.loadFromFile(gFreemonkeys.getLastBufferFile());
+  }
+}
+
+gFreemonkeys.saveSession = function () {
+  var current = this.currentFile;
+  if (!current)
+    this.saveToFile(this.getLastBufferFile());
 }
 
 gFreemonkeys.saveWindowParams = function () {
@@ -475,7 +549,7 @@ gFreemonkeys.selectApplication = function () {
 
 window.addEventListener("resize",function () {
   document.getElementById("panels").style.height=(window.innerHeight-30)+"px";
-  document.getElementById("code-editor-container").style.height=(window.innerHeight-70)+"px";
+  document.getElementById("code-editor-container").style.height=(window.innerHeight-100)+"px";
 },false);
 
 gFreemonkeys.initEditor = function () {
@@ -493,26 +567,23 @@ gFreemonkeys.initEditor = function () {
     iframeClass: 'code-iframe',
     initCallback : function () {
       
-      gFreemonkeys.restorePreviousSession();
       gFreemonkeys.linesContainer = container.getElementsByClassName("CodeMirror-line-numbers")[0];
+      gFreemonkeys.restorePreviousSession();
       
-      window.focus();
-      window.setTimeout(function(){
-          //gFreemonkeys.editor.frame.contentWindow.document.body.focus();
-          gFreemonkeys.editor.focus();
-        },1000);
     }
   });
 }
 
 gFreemonkeys.focusEditor = function () {
-  window.document.documentElement.focus();
+  window.focus();
+  //window.document.documentElement.focus();
   window.setTimeout(function(){
       gFreemonkeys.editor.focus();
+      //gFreemonkeys.editor.frame.contentWindow.document.body.focus();
     },0);
 }
 
-gFreemonkeys.load = function () {
+gFreemonkeys.onload = function () {
   this.restoreWindowParams();
   
   window.focus();
@@ -520,7 +591,7 @@ gFreemonkeys.load = function () {
   this.initEditor();
 }
 
-gFreemonkeys.unload = function () {
+gFreemonkeys.onunload = function () {
   this.saveWindowParams();
   this.saveSession();
   try {
@@ -537,8 +608,8 @@ gFreemonkeys.unload = function () {
 
 window.addEventListener("load",function () {
   window.removeEventListener("load",arguments.callee,false);
-  gFreemonkeys.load();
+  gFreemonkeys.onload();
 },false);
 window.addEventListener("unload",function () {
-  gFreemonkeys.unload();
+  gFreemonkeys.onunload();
 },false);
