@@ -3,7 +3,11 @@
   <title>Freemonkeys</title>
   
   <link href="chrome://freemonkeys/skin/freemonkeys.css" type="text/css" rel="stylesheet">
+  <script type="text/javascript" src="debug-tools.js"></script>
   <script type="text/javascript" src="freemonkeys.js"></script>
+  <script type="text/javascript" src="panels/prefs.js"></script>
+  <script type="text/javascript" src="panels/editor.js"></script>
+  <script type="text/javascript" src="panels/report.js"></script>
   
   <!-- code editor -->
   <script src="codemirror/codemirror.js" type="text/javascript"></script>
@@ -18,7 +22,6 @@
 
 <div id="debug-box" style="text-align: right">
   <span onclick="inspect(document)">DOMi</span>
-  <span onclick="inspect(gFreemonkeys.editor.get('gutterView'))">test</span>
   <span onclick="aboutConfig()">about:config</span>
   <span onclick="executeDebug()">execute++</span>
   <span onclick="restart()">restart</span>
@@ -31,14 +34,14 @@
     <span id="panel-report-button" style="display:none" onclick="gFreemonkeys.switchTo('report')">Report</span>
   </div>
   
-  <div id="panel-edit" class="panel current" onshow="gFreemonkeys.focusEditor();">
+  <div id="panel-edit" class="panel current" onshow="gFMEditor.focusEditor();">
     <div class="actions">
       <span onclick="gFreemonkeys.execute()">&raquo; execute</span>
       <span onclick="gFreemonkeys.selectNode()">&raquo; select node</span>
       <span onclick="gFreemonkeys.freeTheMonkey()">&raquo; free the monkey</span>
-      <span onclick="gFreemonkeys.new()">&raquo; new</span>
-      <span onclick="gFreemonkeys.load()">&raquo; load</span>
-      <span onclick="gFreemonkeys.save()">&raquo; save</span>
+      <span onclick="gFMEditor.new()">&raquo; new</span>
+      <span onclick="gFMEditor.load()">&raquo; load</span>
+      <span onclick="gFMEditor.save()">&raquo; save</span>
     </div>
     <div id="report-line" style="display:none"></div>
     <div id="code-editor-container">
@@ -55,19 +58,19 @@
     </ul>
   </div>
   
-  <div id="panel-settings" class="panel" onshow="gFreemonkeys.refreshSettings()">
+  <div id="panel-settings" class="panel" onshow="gFMPrefs.refreshSettings()">
     <p>
       <h3>Execution settings:</h3>
-      <input type="checkbox" id="auto-switch-to-report" checked="true" onclick="gFreemonkeys.toggleSwitchToReport()" /><span onclick="gFreemonkeys.toggleSwitchToReport()"> Automatically switch to report on execution </span><br/>
+      <input type="checkbox" id="auto-switch-to-report" checked="true" onclick="gFMPrefs.toggleSwitchToReport()" /><span onclick="gFMPrefs.toggleSwitchToReport()"> Automatically switch to report on execution </span><br/>
     </p>
     <p>
       <h3>Application binary path :</h3>
-      <span class="change-path" onclick="gFreemonkeys.selectApplication()">select</span>
+      <span class="change-path" onclick="gFMPrefs.selectApplication()">select</span>
       <span id="application-path"></span>
     </p>
     <p>
       <h3>Profile :</h3>
-      <span class="change-path" onclick="gFreemonkeys.selectProfile()">select</span>
+      <span class="change-path" onclick="gFMPrefs.selectProfile()">select</span>
       <span id="profile-path"></span>
     </p>
   </div>
