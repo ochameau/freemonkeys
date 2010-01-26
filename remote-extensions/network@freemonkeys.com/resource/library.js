@@ -38,8 +38,8 @@ try {
   garden.setTimeout = function (f,t) {hiddenWindow.setTimeout(f,t)};
   garden.setTimeout = function (t) {hiddenWindow.clearTimeout(t)};
   
-  garden.monkey.windows = {};
-  loader.loadSubScript("resource://fm-network/api/monkey.windows.js", garden.monkey);
+  garden.windows = {};
+  loader.loadSubScript("resource://fm-network/api/windows.js", garden);
   
   garden.assert = {};
   loader.loadSubScript("resource://fm-network/api/assert.js", garden);

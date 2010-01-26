@@ -21,6 +21,5 @@ in fact, the problem exist as the program start ... we can delete lines before a
 no matter what .focus() function we call :/
 - highlight all nodes, on each action (click, type, screenshot, ...)
 - find why keydown/up/press doesn't work on xul:textbox
-- warning on exit without saving
-- buffer status (unsaved modifications...)
+
 

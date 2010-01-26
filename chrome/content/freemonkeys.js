@@ -185,7 +185,7 @@ gFreemonkeys.selectNode = function () {
           position = '"bottommost"';
         else if (!info.position.isFirst && !info.position.isLast && info.position.index>=0)
           position = info.position.index;
-        content += 'var top = monkey.windows.getRegistered("'+info.id+'", '+position+');\n';
+        content += 'var top = windows.getRegistered("'+info.id+'", '+position+');\n';
         return "top";
       } else if (info.type=="top-unknown") {
         var position = '"topmost"';
@@ -196,7 +196,7 @@ gFreemonkeys.selectNode = function () {
         else if (!info.position.isFirst && !info.position.isLast && info.position.index>=0)
           position = info.position.index;
         
-        content += 'var top = monkey.windows.getByZindex(';
+        content += 'var top = windows.getByZindex(';
         if (info.info.id)
           content += '"'+info.info.id+'"';
         else 
@@ -219,11 +219,11 @@ gFreemonkeys.selectNode = function () {
         content += ', '+position+');\n';
         return "top";
       } else if (info.type=="sub-known") {
-        content += 'var win = monkey.windows.getRegistered("'+info.id+'");\n';
+        content += 'var win = windows.getRegistered("'+info.id+'");\n';
         return "win";
       } else if (info.type=="sub-unknown") {
         var varname = printWinCode(info.parent);
-        content += 'var win = monkey.windows.sub('+varname+', "'+info.xpath+'");\n';
+        content += 'var win = windows.sub('+varname+', "'+info.xpath+'");\n';
         return "win";
       } else if (info.type=="tab") {
         var varname = printWinCode(info.top);
@@ -242,7 +242,7 @@ gFreemonkeys.selectNode = function () {
     
     gFMEditor.insertContent(content);
   }
-  var alive = FreemonkeysZoo.selectNode(gFreemonkeys.defaultApplicationPath, gFreemonkeys.defaultProfilePath, onClick);
+  var alive = FreemonkeysZoo.selectNode(gFMPrefs.defaultApplicationPath, gFMPrefs.defaultProfilePath, onClick);
   if (!alive) return;
   /*
   // Nothing works to restore our window on top of all other applications :/
@@ -269,7 +269,7 @@ gFreemonkeys.selectNode = function () {
 }
 
 gFreemonkeys.freeTheMonkey = function () {
-  FreemonkeysZoo.free(gFreemonkeys.defaultApplicationPath, gFreemonkeys.defaultProfilePath);
+  FreemonkeysZoo.free(gFMPrefs.defaultApplicationPath, gFMPrefs.defaultProfilePath);
 }
 
 gFreemonkeys.saveWindowParams = function () {

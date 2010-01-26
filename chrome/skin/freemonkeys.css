@@ -101,6 +101,7 @@ body {
   background-repeat: no-repeat;
   background-position: 5px 0;
   font-weight: bold;
+  overflow-x: auto;
 }
 
 #panel-edit #report-line[status="in-process"] {

@@ -180,6 +180,7 @@ gFMEditor.loadFromFile = function (file) {
 
 gFMEditor.saveToFile = function (file) {
   this.saveContentToFile(file,this.content);
+  this.changesInProgress = false;
 }
 
 gFMEditor.restorePreviousSession = function () {

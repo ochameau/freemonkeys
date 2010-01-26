@@ -113,6 +113,7 @@ windows.getByZindex = function (id, type, name, location, position) {
 }
 
 windows.getRegistered = function (id, position) {
+try {
   var info = null;
   for(var i=0; i<knownTopWindows.length; i++) {
     var w = knownTopWindows[i];
@@ -122,16 +123,29 @@ windows.getRegistered = function (id, position) {
   }
   if (!info) throw new Error("Unknown window id : "+id);
   var list = windows.getList(info.params.id, info.params.type, info.params.name, info.params.location, windows.ORDER_BY_ZORDER);
+  var win = null;
   if (position=="bottommost")
-    return list[0];
+    win = list[0];
   else if (typeof position=="number")
-    return list[position];
-  return list[list.length-1];
+    win = list[position];
+  else {
+    position = "topmost";
+    win = list[list.length-1];
+  }
+  if (!win) throw new Error("No such window at position: "+position);
+  return win;
+} catch(e) {
+  ___api_exception(e);
+}
 }
 
 windows.sub = function (parentWin, iframeXPath) {
+try {
   var doc = parentWin.document;
   var results = doc.evaluate(iframeXPath,doc,null,Components.interfaces.nsIDOMXPathResult.ANY_TYPE, null);
   var iframe = results.iterateNext();
   return new windows.MonkeyWindow(iframe.contentWindow);
+} catch(e) {
+  ___api_exception(e);
+}
 }
