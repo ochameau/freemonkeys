@@ -86,6 +86,10 @@ body {
   color: #00c;
 }
 
+#save[changes="true"] {
+  color: #C00000;
+}
+
 /******************************/
 /*   EDIT PANEL               */
 

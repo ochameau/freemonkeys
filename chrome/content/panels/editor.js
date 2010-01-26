@@ -5,6 +5,7 @@ const gFMEditor = {
   set content (v) {
     this.editor.setCode(v);
     this.fixFocus();
+    this.changesInProgress = false;
     return v;
   },
   get currentFile () {
@@ -19,8 +20,8 @@ const gFMEditor = {
       window.document.title="Freemonkey - new file";
       try {
         gFreemonkeys.prefs.clearUserPref("current-file");
-        return v;
       } catch(e) {}
+      return v;
     }
     window.document.title="Freemonkey - "+v.leafName;
     gFreemonkeys.prefs.setComplexValue("current-file", Components.interfaces.nsILocalFile, v);
@@ -32,6 +33,19 @@ const gFMEditor = {
          .get("ProfD", Components.interfaces.nsIFile);
     file.append("buffer.test.js");
     return file;
+  },
+  _changes : false,
+  get changesInProgress () {
+    return this._changes;
+  },
+  set changesInProgress (v) {
+    if (v==this._changes) return;
+    this._changes = v;
+    var saveBtn = document.getElementById("save");
+    if (v)
+      saveBtn.setAttribute("changes","true");
+    else if (saveBtn.hasAttribute("changes"))
+      saveBtn.removeAttribute("changes");
   }
 };
 
@@ -192,6 +206,12 @@ gFMEditor.onload = function () {
     lineNumbers: true,
     autoMatchParens: true,
     iframeClass: 'code-iframe',
+    saveFunction : function () {
+      gFMEditor.save();
+    },
+    onChange : function () {
+      gFMEditor.changesInProgress = true;
+    },
     initCallback : function () {
       
       gFMEditor.linesContainer = container.getElementsByClassName("CodeMirror-line-numbers")[0];
@@ -203,7 +223,12 @@ gFMEditor.onload = function () {
 
 gFMEditor.onunload = function () {
   var current = this.currentFile;
-  if (!current)
+  if (!current) {
     this.saveToFile(this.lastBufferFile);
+  } else if (this.changesInProgress) {
+    var doSave = window.confirm("Save "+current.leafName+" ?");
+    if (doSave)
+      this.saveToFile(current);
+  }
 }
 
