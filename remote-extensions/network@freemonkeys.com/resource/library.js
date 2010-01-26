@@ -14,7 +14,20 @@ function inspect(obj) {
 
 Components.utils.import("resource://fm-network/moz-puppet.js");
 
+Components.utils.import("resource://fm-network/jetpack-runner.js");
+
 var macro = {};
+
+macro.jetpackExecute = function (code, listener) {
+try {
+  listener("start",null,null);
+  jetpackRunner.run();
+  listener("end",null,null);
+} catch(e) {
+  listener("internal-exception",-1,e.toString());
+  Components.utils.reportError("Internal exception during test :\n"+e+"\n"+e.stack);
+}
+}
 
 macro.execute = function (code, listener) {
 try {

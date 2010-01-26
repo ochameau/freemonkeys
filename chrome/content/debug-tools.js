@@ -19,3 +19,9 @@ function restart() {
                   Components.interfaces.nsIAppStartup.eRestart);
 }
 
+function jetpackRun() {
+  function listener(a,b) {
+    Components.utils.reportError(a+" : "+b);
+  }
+  FreemonkeysZoo.runJetpack(gFMPrefs.defaultApplicationPath, gFMPrefs.defaultProfilePath, "", listener);
+}

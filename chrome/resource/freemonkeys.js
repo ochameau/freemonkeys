@@ -213,48 +213,60 @@ FreemonkeysZoo.prepareProfile = function (profile, doACopy) {
   
 }
 
-
-
 var gPortNumber = 9000;
-FreemonkeysZoo.execute = function (application, profile, code, listener) {
-  
-  function getMonkey(onMonkeyAlive) {
-    if (FreemonkeysZoo._pens[application] && FreemonkeysZoo._pens[application][profile]) {
-      if (FreemonkeysZoo._pens[application][profile].puppet.isAlive())
-        return onMonkeyAlive(FreemonkeysZoo._pens[application][profile]);
-      else
-        delete FreemonkeysZoo._pens[application][profile];
-    }
-    
-    listener("monkey",-1,"launch");
-    var port = gPortNumber++;
-    
-    FreemonkeysZoo.prepareProfile(profile);
-    Application.start(application, profile, port);
-    
-    Application.connect("localhost", port, profile, 
-      function (success, res) {
-        if (success) {
-          if (!FreemonkeysZoo._pens[application])
-            FreemonkeysZoo._pens[application] = {};
-          FreemonkeysZoo._pens[application][profile] = res;
-          onMonkeyAlive(res);
-        } else {
-          error = res.msg;
-          listener("internal-exception",-1,"Error during monkey creation : "+res.msg);
-        }
-      });
-    
+FreemonkeysZoo.getMonkey = function (application, profile, listener, onMonkeyAlive) {
+  if (FreemonkeysZoo._pens[application] && FreemonkeysZoo._pens[application][profile]) {
+    if (FreemonkeysZoo._pens[application][profile].puppet.isAlive())
+      return onMonkeyAlive(FreemonkeysZoo._pens[application][profile]);
+    else
+      delete FreemonkeysZoo._pens[application][profile];
   }
   
-  getMonkey(function (monkey) {
-    listener("monkey",-1,"ready");
-    monkey.asyncMacro.execObjectFunction(
-        "execute",
-        [code, listener],
-        function (res) {
-          listener("monkey",-1,"return");
-        }
-      );
-  });
+  listener("monkey",-1,"launch");
+  var port = gPortNumber++;
+  
+  FreemonkeysZoo.prepareProfile(profile);
+  Application.start(application, profile, port);
+  
+  Application.connect("localhost", port, profile, 
+    function (success, res) {
+      if (success) {
+        if (!FreemonkeysZoo._pens[application])
+          FreemonkeysZoo._pens[application] = {};
+        FreemonkeysZoo._pens[application][profile] = res;
+        onMonkeyAlive(res);
+      } else {
+        error = res.msg;
+        listener("internal-exception",-1,"Error during monkey creation : "+res.msg);
+      }
+    });
+  
+}
+
+FreemonkeysZoo.runJetpack = function (application, profile, code, listener) {
+  FreemonkeysZoo.getMonkey(application, profile, listener, 
+    function (monkey) {
+      monkey.asyncMacro.execObjectFunction(
+          "jetpackExecute",
+          [code, listener],
+          function (res) {
+            Components.utils.reportError("run jetpack ok");
+          }
+        );
+    });
+}
+
+FreemonkeysZoo.execute = function (application, profile, code, listener) {
+  
+  FreemonkeysZoo.getMonkey(application, profile, listener, 
+    function (monkey) {
+      listener("monkey",-1,"ready");
+      monkey.asyncMacro.execObjectFunction(
+          "execute",
+          [code, listener],
+          function (res) {
+            listener("monkey",-1,"return");
+          }
+        );
+    });
 }

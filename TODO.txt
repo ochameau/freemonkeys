@@ -1,7 +1,12 @@
+#editor:
+- fix editor focus when coming back from a node selection,
+in fact, the problem exist as the program start ... we can delete lines before any character is typed,
+no matter what .focus() function we call :/
+
+#tests:
 - add two options (need UI, code's done): 
   * use an empty profile
   * use specified profile but do a copy before using it (to keep it clean)
-- handle anonymous xpath
 - implements css selector
 - add option to show timestamp for each assert time
 - add something : js api and/or config to automatically set some preferences values 
@@ -14,12 +19,13 @@
 - asynchronous test handling
 - http lib
 - jsapi: scroll into view? isVisible for each test?
-- improve error management of windows retrieving in js api
 - try to avoid retrieving always the topmost windows by switching to mousedown and prevent event dispatch
-- fix editor focus when coming back from a node selection,
-in fact, the problem exist as the program start ... we can delete lines before any character is typed,
-no matter what .focus() function we call :/
 - highlight all nodes, on each action (click, type, screenshot, ...)
 - find why keydown/up/press doesn't work on xul:textbox
 
 
+
+#jetpack:
+- some directories in settings
+- automatically copy .xpt in remote instance
+- read directories and parse package.json in order to generate modules paths
