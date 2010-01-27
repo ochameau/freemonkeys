@@ -20,8 +20,5 @@ function restart() {
 }
 
 function jetpackRun() {
-  function listener(a,b) {
-    Components.utils.reportError(a+" : "+b);
-  }
-  FreemonkeysZoo.runJetpack(gFMPrefs.defaultApplicationPath, gFMPrefs.defaultProfilePath, "", listener);
+  gFMJetpackPackages.run();
 }

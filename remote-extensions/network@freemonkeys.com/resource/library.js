@@ -14,14 +14,26 @@ function inspect(obj) {
 
 Components.utils.import("resource://fm-network/moz-puppet.js");
 
-Components.utils.import("resource://fm-network/jetpack-runner.js");
 
 var macro = {};
 
-macro.jetpackExecute = function (code, listener) {
+macro.jetpackExecute = function (resourcesPathsWrapper, jetpackPath, listener) {
 try {
   listener("start",null,null);
-  jetpackRunner.run();
+  var loader = Components.classes["@mozilla.org/moz/jssubscript-loader;1"]
+                       .getService(Components.interfaces.mozIJSSubScriptLoader);
+  var jsm = {};
+  loader.loadSubScript("resource://fm-network/jetpack-runner.js", jsm);
+  
+  // remove network wrapper arround this data object
+  var resourcesPaths = {};
+  for(let name in resourcesPathsWrapper) {
+    if (name.match(/remoteId/)) continue;
+    resourcesPaths[name] = resourcesPathsWrapper[name];
+  }
+  
+  jsm.jetpackRunner.run(resourcesPaths, jetpackPath);
+  
   listener("end",null,null);
 } catch(e) {
   listener("internal-exception",-1,e.toString());

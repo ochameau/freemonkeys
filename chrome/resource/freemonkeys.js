@@ -243,12 +243,12 @@ FreemonkeysZoo.getMonkey = function (application, profile, listener, onMonkeyAli
   
 }
 
-FreemonkeysZoo.runJetpack = function (application, profile, code, listener) {
+FreemonkeysZoo.runJetpack = function (application, profile, resourcesPaths, jetpackPath, listener) {
   FreemonkeysZoo.getMonkey(application, profile, listener, 
     function (monkey) {
       monkey.asyncMacro.execObjectFunction(
           "jetpackExecute",
-          [code, listener],
+          [resourcesPaths, jetpackPath, listener],
           function (res) {
             Components.utils.reportError("run jetpack ok");
           }

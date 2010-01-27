@@ -289,7 +289,7 @@ gFreemonkeys.restoreWindowParams = function () {
 
 gFreemonkeys.onresize = function () {
   document.getElementById("panels").style.height=(window.innerHeight-30)+"px";
-  var reportLine = this.reportLine.style.display==""?0:30;
+  var reportLine = this.reportLine.style.display=="none"?0:30;
   document.getElementById("code-editor-container").style.height=(window.innerHeight-70-reportLine)+"px";
 }
 
