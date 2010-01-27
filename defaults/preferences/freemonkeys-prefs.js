@@ -1,7 +1,6 @@
-//pref("toolkit.defaultChromeURI", "chrome://freemonkeys/content/transparent.xul");
-//pref("toolkit.defaultChromeFeatures", "chrome,resizable=yes,titlebar=no,hidechrome=yes");
-pref("toolkit.defaultChromeURI", "chrome://freemonkeys/content/freemonkeys.html");
-pref("toolkit.defaultChromeFeatures", "chrome,resizable=yes,dialog=no");
+//pref("toolkit.defaultChromeURI", "chrome://freemonkeys/content/freemonkeys.html");
+pref("toolkit.defaultChromeURI", "chrome://freemonkeys/content/transparent-window.xul");
+pref("toolkit.defaultChromeFeatures", "chrome,dialog=yes,titlebar=no");
 
 // Debug preferences
 // see http://developer.mozilla.org/en/docs/Debugging_a_XULRunner_Application

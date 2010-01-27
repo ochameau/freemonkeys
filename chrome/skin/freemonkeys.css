@@ -1,8 +1,9 @@
+
 body {
   padding: 0; 
   margin: 0;
   width: 100%;
-  background-color: transparent !important;
+  background-color: #ddd;
   border: 0;
 }
 
@@ -26,8 +27,6 @@ body {
 
 #panels {
   border: 15px solid #ddd; 
-  -moz-border-radius: 20px;
-  background-color: #ddd;
   min-width: 660px;
 }
 #panels-selection {
