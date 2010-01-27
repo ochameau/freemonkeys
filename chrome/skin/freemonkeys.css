@@ -28,6 +28,7 @@ body {
   border: 15px solid #ddd; 
   -moz-border-radius: 20px;
   background-color: #ddd;
+  min-width: 660px;
 }
 #panels-selection {
   background-color: #ddd;
@@ -39,7 +40,7 @@ body {
 #panels-selection > *{
   margin-left: 15px;
   background-color: #d7d7d7;
-  border: 1px solid #ddd;
+  border: 1px solid #888;
   -moz-border-radius: 5px 5px 0 0;
   padding: 3px 10px 0 10px;
   cursor: pointer;
@@ -49,16 +50,18 @@ body {
   background-color: #eee;
 }
 #panels-selection > span:hover{
-  text-decoration: underline;
   background-color: #eee;
-  border-bottom: 1px solid #eee;
+}
+#panel-settings-button {
+  position: absolute;
+  right: 40px; top:11px;
 }
 
 .panel {
   display: none;
   background-color: #eee;
   -moz-border-radius: 5px;
-  border: 1px solid #eee;
+  border: 1px solid #999;
   margin: 0;
 }
 .panel.current {

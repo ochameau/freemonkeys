@@ -62,12 +62,9 @@ gFreemonkeys._testsListener = function testsListener(type, line, data) {
   try {
     if (type=="assert-pass" || type=="assert-fail") {
       var msg="line "+line+": ";
-      msg += data.name;
+      msg += "assert."+data.name;
       if (data.args) {
-        var l=[];
-        for(var i in data.args)
-          l.push("("+(typeof data.args[i])+") "+data.args[i]);
-        msg += " ( "+l.join(', ')+" )";
+        msg += "( "+data.args.replace("<","&lt;").replace(">","&gt;")+" )";
       }
       gFMReport.print(type=="assert-pass"?"pass":"fail",type=="assert-pass"?"PASS":"FAIL",msg);
       
@@ -123,9 +120,9 @@ gFreemonkeys._testsListener = function testsListener(type, line, data) {
       gFMReport.print("debug","Inspect",data);
       inspect(data);
     } else if (type=="start") {
-      gFMReport.print("debug","Start");
+      gFMReport.print("debug","Start","");
     } else if (type=="end") {
-      gFMReport.print("debug","End");
+      gFMReport.print("debug","End","");
       if (!gFreemonkeys._gotErrors) {
         gFreemonkeys.reportLine.setAttribute("status","success");
         gFreemonkeys.reportLine.innerHTML = "Test succeeded with "+gFreemonkeys._successCount+" asserts";
