@@ -88,12 +88,19 @@ gFMEditor.setLineClass = function (line, classname) {
 
 // Line start at 1
 gFMEditor.addLineTooltip = function (line, content) {
-  var lineElement = this.linesContainer.childNodes[line-1];
+  var lineElement = this.getLineElementFor(line);
   lineElement.setAttribute("title",content);
   $(lineElement).tooltip({
     tip : '#line-tooltip',
     position: "center right",
-    offset: [-2, 10]
+    offset: [-40, -10],
+    onShow: function () {
+      lineElement.setAttribute("tooltip","true");
+    },
+    onHide: function () {
+      if (lineElement.hasAttribute("tooltip"))
+        lineElement.removeAttribute("tooltip");
+    }
   });
 }
 

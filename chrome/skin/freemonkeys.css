@@ -16,6 +16,7 @@ body {
   font-size: 18px;
   font-style: italic;
   background: #999;
+  cursor: default;
 }
 
 #close-button {
@@ -37,7 +38,7 @@ body {
 
 #debug-box {
   position: absolute;
-  right: 0; bottom: 0;
+  right: 5px; bottom: 20px;
   opacity: 0.6;
   z-index: 3;
   margin-right: 20px;
@@ -184,6 +185,10 @@ body {
 }
 .CodeMirror-line-numbers .screenshot {
   background-color: #dde;
+}
+.CodeMirror-line-numbers div[tooltip="true"] {
+  font-weight: bold;
+  color: black;
 }
 
 #code-editor-container {
