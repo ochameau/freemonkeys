@@ -2,11 +2,38 @@
 body {
   padding: 0; 
   margin: 0;
-  width: 100%;
+  /*width: 100%;*/
   background-color: #ddd;
   border: 0;
+  overflow: hidden;
 }
 
+#titlebar {
+  border-top: 3px solid #999;
+  border-bottom: 3px solid #999;
+  text-align: center;
+  font-family: verdana;
+  font-size: 18px;
+  font-style: italic;
+  background: #999;
+}
+
+#close-button {
+  position:absolute;
+  top:2px;right:5px; 
+  font-family:arial; font-weight: bold; font-size: 14px; 
+  cursor: pointer; 
+  background: #d7d7d7; color: gray; 
+  -moz-border-radius: 10px; 
+  width: 20px; height: 20px; 
+  text-align: center; line-height: 18px;
+  border: 1px solid #888;
+}
+#close-button:hover {
+  color: black;
+  background: #eee;
+  border-color: gray;
+}
 
 #debug-box {
   position: absolute;
@@ -26,6 +53,7 @@ body {
 
 
 #panels {
+  position: relative;
   border: 15px solid #ddd; 
   min-width: 660px;
 }
@@ -38,6 +66,7 @@ body {
 }
 #panels-selection > *{
   margin-left: 15px;
+  color: gray;
   background-color: #d7d7d7;
   border: 1px solid #888;
   -moz-border-radius: 5px 5px 0 0;
@@ -47,13 +76,15 @@ body {
 #panels-selection > *.current {
   border-bottom: 1px solid #eee;
   background-color: #eee;
+  color: black;
 }
 #panels-selection > span:hover{
   background-color: #eee;
+  color: black;
 }
 #panel-settings-button {
   position: absolute;
-  right: 40px; top:11px;
+  right: 20px; top:-4px;
 }
 
 .panel {

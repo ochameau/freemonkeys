@@ -14,23 +14,23 @@
   
   <hbox flex="1">
     <vbox>
-      <spacer class="sizer horizontal left" flex="1" />
-      <spacer class="sizer horizontal vertical bottom-left-top-bonus" />
-      <spacer class="sizer horizontal vertical bottom-left" />
+      <spacer class="sizer horizontal left move resizeWidthNegative" flex="1" />
+      <spacer class="sizer horizontal vertical move resizeWidthNegative corner bottom-left-top-bonus" />
+      <spacer class="sizer horizontal vertical move resizeWidthNegative corner bottom-left" />
     </vbox>
     <vbox flex="1">
       <spacer id="header" />
       <iframe src="chrome://freemonkeys/content/freemonkeys.html" flex="1" />
       <hbox>
-        <spacer class="sizer horizontal vertical bottom-left-right-bonus" />
-        <spacer class="sizer vertical bottom" flex="1" />
-        <spacer class="sizer horizontal vertical bottom-right-left-bonus" />
+        <spacer class="sizer horizontal vertical move resizeHeightPositive corner bottom-left-right-bonus" />
+        <spacer class="sizer vertical bottom resizeHeightPositive" flex="1" />
+        <spacer class="sizer horizontal vertical resizeHeightPositive corner bottom-right-left-bonus" />
       </hbox>
     </vbox>
     <vbox>
-      <spacer class="sizer horizontal right" flex="1" />
-      <spacer class="sizer horizontal vertical bottom-right-top-bonus" />
-      <spacer class="sizer horizontal vertical bottom-right" />
+      <spacer class="sizer horizontal positive right resizeWidthPositive" flex="1" />
+      <spacer class="sizer horizontal vertical positive resizeWidthPositive corner bottom-right-top-bonus" />
+      <spacer class="sizer horizontal vertical positive resizeWidthPositive corner bottom-right" />
     </vbox>
   </hbox>
   

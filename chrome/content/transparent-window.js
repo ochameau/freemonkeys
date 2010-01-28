@@ -68,9 +68,20 @@ gTransparentWindow.sizerClick = function (event) {
   
   var isHorizontal = sizer.className.match(/horizontal/);
   var isVertical = sizer.className.match(/vertical/);
+  var isCorner = sizer.className.match(/corner/);
   
-  var isMoving = sizer.className.match(/left|top/);
-  var resizingFactor = sizer.className.match(/bottom|right/)?1:-1;
+  var isMoving = sizer.className.match(/move/);
+  var resizingWidthFactor = 0;
+  if (sizer.className.match(/resizeWidthNegative/))
+    resizingWidthFactor=-1;
+  if (sizer.className.match(/resizeWidthPositive/))
+    resizingWidthFactor=1;
+  
+  var resizingHeightFactor = 0;
+  if (sizer.className.match(/resizeHeightNegative/))
+    resizingHeightFactor=-1;
+  if (sizer.className.match(/resizeHeightPositive/))
+    resizingHeightFactor=1;
   
   var initialEventX = event.screenX;
   var initialEventY = event.screenY;
@@ -84,15 +95,30 @@ gTransparentWindow.sizerClick = function (event) {
   function move(event) {
     var diffX = event.screenX-initialEventX;
     var diffY = event.screenY-initialEventY;
-    if (isMoving) {
-      window.moveTo(initialX+diffX, initialY+diffY);
-    }
     
-    var width = initialWidth+resizingFactor*diffX
+    var width = initialWidth+resizingWidthFactor*diffX
     width = Math.max(gTransparentWindow.minWidth, width);
-    var height = initialHeight+resizingFactor*diffY;
+    var height = initialHeight+resizingHeightFactor*diffY;
     height = Math.max(gTransparentWindow.minHeight, height);
-    window.resizeTo(width, height);
+    
+    var widthChanged = width!=window.innerWidth;
+    var heightChanged = height!=window.innerHeight;
+    
+    if (isHorizontal)
+      window.innerWidth = width;
+    if (isVertical)
+      window.innerHeight = height;
+    //window.resizeTo(isHorizontal?width:window.innerWidth, isVertical?height:window.innerHeight);
+    
+    if (isMoving) {
+      var x = initialX+diffX;
+      var y = initialY+diffY;
+      if (isHorizontal && widthChanged)
+        window.screenX = x;
+      if (isVertical && heightChanged)
+        window.screenY = y;
+      //window.moveTo(isHorizontal?x:window.screenX, isVertical?y:window.screenY);
+    }
     
     event.stopPropagation();
     event.preventDefault();

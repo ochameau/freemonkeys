@@ -1,9 +1,4 @@
 
-#header {
-  background: #999;
-  height: 2px;
-}
-
 .sizer {
   cursor: pointer;
 }
@@ -15,25 +10,25 @@
 }
 .sizer.top {
   cursor: n-resize;
-  background: -moz-linear-gradient(bottom, #ddd, transparent);  
+  background: -moz-linear-gradient(bottom, #999, transparent);  
 }
 .sizer.left, .sizer.bottom-left-top-bonus {
   cursor: w-resize;
-  background: -moz-linear-gradient(right, #ddd, transparent);  
+  background: -moz-linear-gradient(right, #999, transparent);  
 }
 .sizer.right, .sizer.bottom-right-top-bonus {
   cursor: e-resize;
-  background: -moz-linear-gradient(left, #ddd, transparent);  
+  background: -moz-linear-gradient(left, #999, transparent);  
 }
 .sizer.bottom, .sizer.bottom-left-right-bonus, .sizer.bottom-right-left-bonus {
   cursor: s-resize;
   /*-moz-border-radius: 0 0 5px 5px;*/
-  background: -moz-linear-gradient(top, #ddd, transparent);
+  background: -moz-linear-gradient(top, #999, transparent);
 }
 
 .sizer.bottom-left {
   cursor: sw-resize;
-  background: -moz-linear-gradient(right top, #ddd, transparent 55%);
+  background: -moz-radial-gradient(right top, #999, transparent 70%);
 }
 .sizer.bottom-left-top-bonus {
   height: 20px;
@@ -44,7 +39,8 @@
 
 .sizer.bottom-right {
   cursor: se-resize;
-  background: -moz-linear-gradient(left top, #ddd, transparent 55%);
+  background: -moz-radial-gradient(top left, #999, transparent 70%);
+  
 }
 .sizer.bottom-right-top-bonus {
   height: 20px;

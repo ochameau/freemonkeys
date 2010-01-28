@@ -19,7 +19,11 @@
   <script src="jquery/jquery.tools.min.js" type="text/javascript"></script>
   
 </head>
-<body onmousedown="top.gTransparentWindow.ondragDown(event)">
+<body>
+
+<div id="titlebar" onmousedown="top.gTransparentWindow.ondragDown(event)">Hey!</div>
+
+<div id="close-button" onclick="top.close()">x</div>
 
 <div id="debug-box" style="text-align: right">
   <span onclick="jetpackRun()">jetpack</span>
