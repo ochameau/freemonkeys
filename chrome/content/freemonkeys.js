@@ -3,6 +3,15 @@ Components.utils.import("resource://freemonkeys/freemonkeys.js");
 
 var gFreemonkeys = {
   
+  set titleBonus (v) {
+    if (!this._titleBonus)
+      this._titleBonus = document.getElementById("title-bonus");
+    if (v)
+      this._titleBonus.innerHTML = " - "+v;
+    else
+      this._titleBonus.innerHTML = "";
+  },
+  
   get reportLine () {
     delete this.reportLine;
     this.reportLine = document.getElementById("report-line");
@@ -45,13 +54,20 @@ gFreemonkeys.cleanReport = function () {
   gFMEditor.cleanLinesStates();
 }
 
+gFreemonkeys.getCurrentTestTime = function () {
+  var time = new Date().getTime()-gFreemonkeys._testStartTime;
+  if (time<1000) return time+" ms";
+  else if (time<1000*60) return (time/1000)+" s";
+  return (time/(1000*60))+" m";
+}
+
 gFreemonkeys.addLineTooltip = function (line, classname, title, tooltip) {
   gFMEditor.setLineClass(line, classname);
   
   var content = "";
   var timestamp = '';
   timestamp += '<div style="position: absolute; top:0; right: 0;">';
-  timestamp += (new Date().getTime()-gFreemonkeys._testStartTime)+' ms';
+  timestamp += gFreemonkeys.getCurrentTestTime()+' ms';
   timestamp += '</div>';
   //content += timestamp;
   content += '<strong class="title">'+title+'</strong><br/>'+tooltip;
@@ -66,7 +82,7 @@ gFreemonkeys._testsListener = function testsListener(type, line, data) {
       if (data.args) {
         msg += "( "+data.args.replace("<","&lt;").replace(">","&gt;")+" )";
       }
-      gFMReport.print(type=="assert-pass"?"pass":"fail",type=="assert-pass"?"PASS":"FAIL",msg);
+      gFMReport.print(type=="assert-pass"?"pass":"fail",type=="assert-pass"?"PASS":"FAIL",gFreemonkeys.getCurrentTestTime(),msg);
       
       if (type=="assert-fail") {
         var message = '<pre class="message">';
@@ -84,7 +100,7 @@ gFreemonkeys._testsListener = function testsListener(type, line, data) {
         gFreemonkeys._successCount++;
       }
     } else if (type=="exception") {
-      gFMReport.print("fail","Exception","line "+line+": "+data);
+      gFMReport.print("fail","Exception",gFreemonkeys.getCurrentTestTime(),"line "+line+": "+data);
       if (line>=0) {
         gFreemonkeys.addLineTooltip(line,"error",'Exception at line '+line,'<pre class="message">'+data.replace("<","&lt;").replace(">","&gt;")+'</pre>');
       } else {
@@ -96,7 +112,7 @@ gFreemonkeys._testsListener = function testsListener(type, line, data) {
         gFreemonkeys.reportLine.innerHTML = "Exception at line "+line+": "+data;
       }
     } else if (type=="internal-exception") {
-      gFMReport.print("fail","Internal exception",data);
+      gFMReport.print("fail","Internal exception",gFreemonkeys.getCurrentTestTime(),data);
       Components.utils.reportError(data);
       if (!gFreemonkeys._gotErrors) {
         gFreemonkeys._gotErrors = true;
@@ -104,7 +120,7 @@ gFreemonkeys._testsListener = function testsListener(type, line, data) {
         gFreemonkeys.reportLine.innerHTML = "Internal exception: "+data;
       }
     } else if (type=="error") {
-      gFMReport.print("fail","Error",data);
+      gFMReport.print("fail","Error",gFreemonkeys.getCurrentTestTime(),data);
       Components.utils.reportError(data);
       if (!gFreemonkeys._gotErrors) {
         gFreemonkeys._gotErrors = true;
@@ -112,26 +128,31 @@ gFreemonkeys._testsListener = function testsListener(type, line, data) {
         gFreemonkeys.reportLine.innerHTML = "Error: "+data;
       }
     } else if (type=="debug") {
-      gFMReport.print("debug","log",data);
+      gFMReport.print("debug","log",gFreemonkeys.getCurrentTestTime(),data);
       gFreemonkeys.addLineTooltip(line,"message",'Debug message at line '+line,'<pre class="message">'+data.replace("<","&lt;").replace(">","&gt;")+'</pre>');
     } else if (type=="screenshot") {
-      gFreemonkeys.addLineTooltip(line,"screenshot",'Screenshot at line '+line,'<img class="screenshot" src="'+data+'" />');
+      gFMReport.print("debug","screenshot",gFreemonkeys.getCurrentTestTime()," at ("+data.boxObject.x+", "+data.boxObject.y+") with size ("+data.boxObject.width+"x"+data.boxObject.height+")");
+      gFreemonkeys.addLineTooltip(line,"screenshot",'Screenshot at line '+line,'<img class="screenshot" src="'+data.data+'" />');
     } else if (type=="inspect") {
-      gFMReport.print("debug","Inspect",data);
+      gFMReport.print("debug","Inspect",gFreemonkeys.getCurrentTestTime(),data);
       inspect(data);
     } else if (type=="start") {
-      gFMReport.print("debug","Start","");
+      // Doesn't take firefox launch into test execution time:
+      gFreemonkeys._testStartTime = new Date().getTime();
+      gFMReport.print("debug","Start",gFreemonkeys.getCurrentTestTime(),"");
     } else if (type=="end") {
-      gFMReport.print("debug","End","");
+      var totalTime = gFreemonkeys.getCurrentTestTime();
+      var msg = "Test succeeded with "+gFreemonkeys._successCount+" asserts in "+totalTime;
+      gFMReport.print("debug","End",gFreemonkeys.getCurrentTestTime(),msg);
       if (!gFreemonkeys._gotErrors) {
         gFreemonkeys.reportLine.setAttribute("status","success");
-        gFreemonkeys.reportLine.innerHTML = "Test succeeded with "+gFreemonkeys._successCount+" asserts";
+        gFreemonkeys.reportLine.innerHTML = msg;
       }
     } else if (type=="monkey") {
       // data = launch|start|return
     } else {
       var message = "Unknown message, type:"+type+" data:"+data;
-      gFMReport.print("debug","Internal error",message);
+      gFMReport.print("debug","Internal error",gFreemonkeys.getCurrentTestTime(),message);
       Components.utils.reportError(message);
     }
   } catch(e) {
@@ -285,10 +306,10 @@ gFreemonkeys.restoreWindowParams = function () {
 
 
 gFreemonkeys.onresize = function () {
-  document.getElementById("panels").style.height=(window.innerHeight-30)+"px";
   var reportLine = this.reportLine.style.display=="none"?0:25;
-  var titleLine = 30;
+  var titleLine = 32;
   document.getElementById("code-editor-container").style.height=(window.innerHeight-70-reportLine-titleLine)+"px";
+  gFMReport.reportList.style.height=(window.innerHeight-120-titleLine)+"px";
 }
 
 gFreemonkeys.onload = function () {

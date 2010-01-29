@@ -69,6 +69,9 @@ try {
   garden.assert = {};
   loader.loadSubScript("resource://fm-network/api/assert.js", garden);
   
+  garden.wait = {};
+  loader.loadSubScript("resource://fm-network/api/wait.js", garden);
+  
   garden.log = {};
   loader.loadSubScript("resource://fm-network/api/log.js", garden);
   

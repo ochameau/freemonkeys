@@ -12,6 +12,6 @@ gFMReport.clean = function () {
   this.reportList.innerHTML = "";
 }
 
-gFMReport.print = function (classname, type, msg) {
-  this.reportList.innerHTML += '<li class="'+classname+'">'+type+" : "+msg+"</li>";
+gFMReport.print = function (classname, type, time, msg) {
+  this.reportList.innerHTML += '<li class="'+classname+'">('+time+') '+type+" : "+msg+"</li>";
 }

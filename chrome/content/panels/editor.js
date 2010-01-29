@@ -17,13 +17,13 @@ const gFMEditor = {
   },
   set currentFile (v) {
     if (!v) {
-      window.document.title="Freemonkey - new file";
+      gFreemonkeys.titleBonus="new file";
       try {
         gFreemonkeys.prefs.clearUserPref("current-file");
       } catch(e) {}
       return v;
     }
-    window.document.title="Freemonkey - "+v.leafName;
+    gFreemonkeys.titleBonus=v.leafName;
     gFreemonkeys.prefs.setComplexValue("current-file", Components.interfaces.nsILocalFile, v);
     return v;
   },
@@ -93,7 +93,7 @@ gFMEditor.addLineTooltip = function (line, content) {
   $(lineElement).tooltip({
     tip : '#line-tooltip',
     position: "center right",
-    offset: [-40, -10],
+    offset: [0, 0],
     onShow: function () {
       lineElement.setAttribute("tooltip","true");
     },
@@ -203,7 +203,7 @@ gFMEditor.restorePreviousSession = function () {
 
 gFMEditor.onload = function () {
   var container = document.getElementById("code-editor-container");
-  this.editor = new CodeMirror(container, {
+  gFMEditor.editor = new CodeMirror(container, {
     width: '100%',
     height: "auto",
     parserfile: ["tokenizejavascript.js", "parsejavascript.js"],
@@ -227,6 +227,7 @@ gFMEditor.onload = function () {
       
     }
   });
+  
 }
 
 gFMEditor.onunload = function () {

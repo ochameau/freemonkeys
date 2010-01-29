@@ -2,16 +2,15 @@
 body {
   padding: 0; 
   margin: 0;
-  /*width: 100%;*/
-  background-color: #ddd;
-  border: 0;
+  background-color: #999;
   overflow: hidden;
 }
 
 #titlebar {
   border-top: 3px solid #999;
   border-bottom: 3px solid #999;
-  text-align: center;
+  padding-left: 15px;
+  text-align: left;
   font-family: verdana;
   font-size: 18px;
   font-style: italic;
@@ -55,8 +54,10 @@ body {
 
 #panels {
   position: relative;
-  border: 15px solid #ddd; 
+  padding: 15px; 
   min-width: 660px;
+  background-color: #ddd;
+  -moz-border-radius: 10px;
 }
 #panels-selection {
   background-color: #ddd;
@@ -85,7 +86,7 @@ body {
 }
 #panel-settings-button {
   position: absolute;
-  right: 20px; top:-4px;
+  right: 30px; top:11px;
 }
 
 .panel {
@@ -106,17 +107,22 @@ body {
 }
 
 .panel .actions {
+  position: relative;
   padding-left: 2.2em;
   height: 1.5em;
   font-family: verdana;
   line-height: 1.5em;
 }
-.panel .actions > * {
+.panel .right-actions {
+  position: absolute;
+  right: 0; top: 0;
+}
+.panel .actions span {
   float: left;
   padding-right: 20px;
   cursor: pointer;
 }
-.panel .actions > span:hover {
+.panel .actions span:hover {
   color: #00c;
 }
 
@@ -240,6 +246,7 @@ body {
   padding: 0px;
   font-family: verdana;
   font-size: 10px;
+  overflow: auto;
 }
 #panel-report li {
   list-style-type: none;
