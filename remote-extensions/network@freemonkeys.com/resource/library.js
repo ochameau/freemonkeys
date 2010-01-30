@@ -55,6 +55,9 @@ try {
   garden.___api_exception = function (exception) {
     listener("exception",Components.stack.caller.caller.lineNumber+1,Components.stack.caller.name+" : "+exception);
   }
+  garden.___api_callback_exception = function (exception, callee) {
+    listener("internal-exception",callee.caller.lineNumber+1,callee.name+" : "+exception);
+  }
   garden.___listener = listener;
   
   // Some usefull functions in global context
@@ -71,6 +74,9 @@ try {
   
   garden.wait = {};
   loader.loadSubScript("resource://fm-network/api/wait.js", garden);
+  
+  garden.http = {};
+  loader.loadSubScript("resource://fm-network/api/http.js", garden);
   
   garden.log = {};
   loader.loadSubScript("resource://fm-network/api/log.js", garden);
@@ -100,6 +106,11 @@ try {
   listener("internal-exception",-1,e.toString());
   Components.utils.reportError("Internal exception during test :\n"+e+"\n"+e.stack);
 }
+  try {
+    garden.http.stop();
+  } catch(e) {
+    Components.utils.reportError(e);
+  }
 }
 
 

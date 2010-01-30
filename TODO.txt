@@ -8,16 +8,13 @@ no matter what .focus() function we call :/
   * use an empty profile
   * use specified profile but do a copy before using it (to keep it clean)
 - implements css selector
-- add option to show timestamp for each assert time
 - add something : js api and/or config to automatically set some preferences values 
 (like browser.shell.checkDefaultBrowser=false or browser.rights.3.shown=true)
-- keypress actions on elements, check click on xul nodes
-- browser js helper
 - auto-detect firefox path (regedit?)
 - red box of node selector with a flying transparent window (no more as red css border)
 - error report on lines got wrong when editing code
-- asynchronous test handling
-- http lib
+- asynchronous test handling: now add async test, var job = wait.forCall(); job.done() (for example)
+- http lib: weird network loop on HTTP assertGetRequest failed + weird failure on multiple calls
 - jsapi: scroll into view? isVisible for each test?
 - try to avoid retrieving always the topmost windows by switching to mousedown and prevent event dispatch
 - highlight all nodes, on each action (click, type, screenshot, ...)
