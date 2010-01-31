@@ -6,3 +6,4 @@ syntax: glob
 ./profiles
 ./prof
 ./remote-extensions/network@freemonkeys.com/resource/moz-puppet.js
+./remote-extensions/network@freemonkeys.com/defaults/preferences
