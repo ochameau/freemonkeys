@@ -4,12 +4,7 @@ in fact, the problem exist as the program start ... we can delete lines before a
 no matter what .focus() function we call :/
 
 #tests:
-- add two options (need UI, code's done): 
-  * use an empty profile
-  * use specified profile but do a copy before using it (to keep it clean)
 - implements css selector
-- add something : js api and/or config to automatically set some preferences values 
-(like browser.shell.checkDefaultBrowser=false or browser.rights.3.shown=true)
 - auto-detect firefox path (regedit?)
 - red box of node selector with a flying transparent window (no more as red css border)
 - error report on lines got wrong when editing code
@@ -19,8 +14,8 @@ no matter what .focus() function we call :/
 - try to avoid retrieving always the topmost windows by switching to mousedown and prevent event dispatch
 - highlight all nodes, on each action (click, type, screenshot, ...)
 - find why keydown/up/press doesn't work on xul:textbox
-
-
+- rewrite network API, to avoid cycle dead lock (return complete object dump for almost all calls)
+- and so, kill empty profile bug, which avoid temporary profile dir to not be removed!
 
 #jetpack:
 - some directories in settings

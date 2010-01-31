@@ -111,6 +111,11 @@ FreemonkeysZoo.freeThemAll = function () {
       var m = this._pens[i][j];
       m.syncMacro.quit();
       m.puppet.close();
+      if (m.temporaryProfile) {
+        hiddenWindow.setTimeout(function () {
+          m.temporaryProfile.remove(true);
+        }, 3000);
+      }
     }
   }
 }
@@ -121,6 +126,11 @@ FreemonkeysZoo.free = function (application, profile) {
   monkey.syncMacro.quit();
   monkey.puppet.close();
   delete this._pens[application][profile];
+  if (monkey.temporaryProfile) {
+    hiddenWindow.setTimeout(function () {
+      monkey.temporaryProfile.remove(true);
+    }, 3000);
+  }
 }
 
 FreemonkeysZoo.selectNode = function (application, profile, onClick) {
@@ -154,7 +164,7 @@ FreemonkeysZoo.writeToFile = function (file, data) {
   converter.close(); // this closes foStream
 }
 
-FreemonkeysZoo.prepareProfile = function (profile, doACopy) {
+FreemonkeysZoo.prepareProfile = function (profile, doACopy, defaultPrefs) {
   // Init profile, check if it's here and valid
   var profileFile = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
   try {
@@ -211,29 +221,58 @@ FreemonkeysZoo.prepareProfile = function (profile, doACopy) {
     FreemonkeysZoo.writeToFile(dstExt, srcExt.path);
   }
   
+  // Synchronize moz-puppet component
+  var fmNetworkDir = extensionsSrcDir.clone();
+  fmNetworkDir.append("network@freemonkeys.com");
+  var fmNetworkResourcesDir = fmNetworkDir.clone();
+  fmNetworkResourcesDir.append("resource");
+  var mozPuppet = Components.classes["@mozilla.org/file/directory_service;1"].  
+                      getService(Components.interfaces.nsIProperties).  
+                      get("resource:app", Components.interfaces.nsIFile);
+  mozPuppet.append("chrome");
+  mozPuppet.append("resource");
+  mozPuppet.append("moz-puppet.js");
+  var dstMozPuppet = fmNetworkResourcesDir.clone();
+  dstMozPuppet.append("moz-puppet.js");
+  dstMozPuppet.remove(false);
+  mozPuppet.copyTo(fmNetworkResourcesDir,"moz-puppet.js");
+  
+  // Set default prefs 
+  if (typeof defaultPrefs=="string" && defaultPrefs.length>0) {
+    var prefsFile = fmNetworkDir.clone();
+    prefsFile.append("defaults");
+    if (!prefsFile.exists())
+      prefsFile.create(Components.interfaces.nsIFile.DIRECTORY_TYPE, 0777);
+    prefsFile.append("preferences");
+    if (!prefsFile.exists())
+      prefsFile.create(Components.interfaces.nsIFile.DIRECTORY_TYPE, 0777);
+    prefsFile.append("remote-prefs.js");
+    FreemonkeysZoo.writeToFile(prefsFile, defaultPrefs);
+  }
 }
 
 var gPortNumber = 9000;
-FreemonkeysZoo.getMonkey = function (application, profile, listener, onMonkeyAlive) {
-  if (FreemonkeysZoo._pens[application] && FreemonkeysZoo._pens[application][profile]) {
-    if (FreemonkeysZoo._pens[application][profile].puppet.isAlive())
-      return onMonkeyAlive(FreemonkeysZoo._pens[application][profile]);
+FreemonkeysZoo.getMonkey = function (application, profilePath, useEmptyProfile, copyProfile, defaultPrefs, listener, onMonkeyAlive) {
+  var profileKey = useEmptyProfile ? "empty" : profilePath;
+  if (FreemonkeysZoo._pens[application] && FreemonkeysZoo._pens[application][profileKey]) {
+    if (FreemonkeysZoo._pens[application][profileKey].puppet.isAlive())
+      return onMonkeyAlive(FreemonkeysZoo._pens[application][profileKey]);
     else
-      delete FreemonkeysZoo._pens[application][profile];
+      delete FreemonkeysZoo._pens[application][profileKey];
   }
   
   listener("monkey",-1,"launch");
   var port = gPortNumber++;
   
-  FreemonkeysZoo.prepareProfile(profile);
-  Application.start(application, profile, port);
+  FreemonkeysZoo.prepareProfile(profilePath, copyProfile, defaultPrefs);
+  Application.start(application, profilePath, port);
   
-  Application.connect("localhost", port, profile, 
+  Application.connect("localhost", port, profilePath, 
     function (success, res) {
       if (success) {
         if (!FreemonkeysZoo._pens[application])
           FreemonkeysZoo._pens[application] = {};
-        FreemonkeysZoo._pens[application][profile] = res;
+        FreemonkeysZoo._pens[application][profileKey] = res;
         onMonkeyAlive(res);
       } else {
         error = res.msg;
@@ -243,9 +282,26 @@ FreemonkeysZoo.getMonkey = function (application, profile, listener, onMonkeyAli
   
 }
 
-FreemonkeysZoo.runJetpack = function (application, profile, resourcesPaths, jetpackPath, listener) {
-  FreemonkeysZoo.getMonkey(application, profile, listener, 
+FreemonkeysZoo.createEmptyProfile = function () {
+  var file = Components.classes["@mozilla.org/file/directory_service;1"].
+                       getService(Components.interfaces.nsIProperties).
+                       get("TmpD", Components.interfaces.nsIFile);
+  file.append("tmp-freemonkeys-profile");
+  file.createUnique(Components.interfaces.nsIFile.DIRECTORY_TYPE, 0777);
+  return file;
+}
+
+FreemonkeysZoo.runJetpack = function (application, profilePath, copyProfile, defaultPrefs, resourcesPaths, jetpackPath, listener) {
+  var temporaryProfile = null;
+  var useEmptyProfile = !profile;
+  if (useEmptyProfile) {
+    temporaryProfile = FreemonkeysZoo.createEmptyProfile();
+    profile = temporaryProfile.path;
+  }
+  
+  FreemonkeysZoo.getMonkey(application, profilePath, useEmptyProfile, copyProfile, defaultPrefs, listener, 
     function (monkey) {
+      monkey.temporaryProfile = temporaryProfile;
       monkey.asyncMacro.execObjectFunction(
           "jetpackExecute",
           [resourcesPaths, jetpackPath, listener],
@@ -254,11 +310,18 @@ FreemonkeysZoo.runJetpack = function (application, profile, resourcesPaths, jetp
           }
         );
     });
+  
 }
 
-FreemonkeysZoo.execute = function (application, profile, code, listener) {
+FreemonkeysZoo.execute = function (application, profilePath, copyProfile, defaultPrefs, code, listener) {
+  var temporaryProfile = null;
+  var useEmptyProfile = !profilePath;
+  if (useEmptyProfile) {
+    temporaryProfile = FreemonkeysZoo.createEmptyProfile();
+    profilePath = temporaryProfile.path;
+  }
   
-  FreemonkeysZoo.getMonkey(application, profile, listener, 
+  FreemonkeysZoo.getMonkey(application, profilePath, useEmptyProfile, copyProfile, defaultPrefs, listener, 
     function (monkey) {
       listener("monkey",-1,"ready");
       monkey.asyncMacro.execObjectFunction(
@@ -269,4 +332,5 @@ FreemonkeysZoo.execute = function (application, profile, code, listener) {
           }
         );
     });
+  
 }

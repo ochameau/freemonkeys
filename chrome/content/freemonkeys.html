@@ -81,8 +81,17 @@
     </p>
     <p>
       <h3>Profile :</h3>
-      <span class="change-path" onclick="gFMPrefs.selectProfile()">select</span>
-      <span id="profile-path"></span>
+      <input type="checkbox" id="copy-profile" checked="false" onclick="gFMPrefs.toggleCopyProfile()" /><span onclick="gFMPrefs.toggleCopyProfile()"> Copy profile to avoid altering it </span><br/>
+      <input type="checkbox" id="empty-profile" checked="false" onclick="gFMPrefs.toggleEmptyProfile()" /><span onclick="gFMPrefs.toggleEmptyProfile()"> Use an empty profile for each execution </span><br/>
+      <div id="profile-selection">
+        <span class="change-path" onclick="gFMPrefs.selectProfile()">select</span>
+        <span id="profile-path"></span>
+      </div>
+    </p>
+    <p>
+      <h3>Default Preferences :</h3>
+      <textarea id="default-prefs" cols="80" rows="8"></textarea>
+      <a href="#" onclick="gFMPrefs.saveDefaultPrefs()">save</a>
     </p>
   </div>
   

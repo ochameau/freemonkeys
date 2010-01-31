@@ -3,6 +3,8 @@ const gFMPrefs = {
     return gFreemonkeys.prefs.getCharPref("paths.profile");
   },
   set defaultProfilePath (v) {
+    if (v && v.length>0)
+      gFMPrefs.settings.useEmptyProfile = false;
     gFreemonkeys.prefs.setCharPref("paths.profile",v);
     return v;
   },
@@ -21,9 +23,38 @@ const gFMPrefs = {
     set switchToReport (v) {
       gFreemonkeys.prefs.setBoolPref("settings.auto-switch-to-report",v);
       return v;
-    }
+    },
+    get copyProfile () {
+      return gFreemonkeys.prefs.getBoolPref("settings.profile.copy");
+    },
+    set copyProfile (v) {
+      gFreemonkeys.prefs.setBoolPref("settings.profile.copy",v);
+      return v;
+    },
+    get useEmptyProfile () {
+      return gFreemonkeys.prefs.getBoolPref("settings.profile.empty");
+    },
+    set useEmptyProfile (v) {
+      if (v)
+        gFMPrefs.defaultProfilePath = "";
+      gFreemonkeys.prefs.setBoolPref("settings.profile.empty",v);
+      return v;
+    },
+    
+    get defaultPrefs () {
+      return gFreemonkeys.prefs.getCharPref("settings.default-preferences");
+    },
+    set defaultPrefs (v) {
+      gFreemonkeys.prefs.setCharPref("settings.default-preferences",v);
+      return v;
+    },
+    
   }
 };
+
+gFMPrefs.onload = function () {
+  document.getElementById("default-prefs").value = gFMPrefs.settings.defaultPrefs;
+}
 
 gFMPrefs.refreshSettings = function () {
   var application = document.getElementById("application-path");
@@ -35,16 +66,40 @@ gFMPrefs.refreshSettings = function () {
   if (this.defaultProfilePath)
     profile.innerHTML = this.defaultProfilePath;
   else
-    profile.innerHTML = "<strong>Need to be set!</strong>";
+    profile.innerHTML = "<i>Use an empty profile.</i>";
   var switchToReport = document.getElementById("auto-switch-to-report");
   if (this.settings.switchToReport)
     switchToReport.setAttribute("checked","true");
   else if (switchToReport.hasAttribute("checked"))
     switchToReport.removeAttribute("checked");
+  var copyProfile = document.getElementById("copy-profile");
+  if (this.settings.copyProfile)
+    copyProfile.setAttribute("checked","true");
+  else if (copyProfile.hasAttribute("checked"))
+    copyProfile.removeAttribute("checked");
+  var emptyProfile = document.getElementById("empty-profile");
+  var profileSelection = document.getElementById("profile-selection");
+  if (this.settings.useEmptyProfile) {
+    emptyProfile.setAttribute("checked","true");
+    profileSelection.className = "disabled";
+  } else if (emptyProfile.hasAttribute("checked")) {
+    emptyProfile.removeAttribute("checked");
+    profileSelection.className = "";
+  }
 }
 
 gFMPrefs.toggleSwitchToReport = function () {
   gFMPrefs.settings.switchToReport = !gFMPrefs.settings.switchToReport;
+  this.refreshSettings();
+}
+
+gFMPrefs.toggleCopyProfile = function () {
+  gFMPrefs.settings.copyProfile = !gFMPrefs.settings.copyProfile;
+  this.refreshSettings();
+}
+
+gFMPrefs.toggleEmptyProfile = function () {
+  gFMPrefs.settings.useEmptyProfile = !gFMPrefs.settings.useEmptyProfile;
   this.refreshSettings();
 }
 
@@ -77,3 +132,13 @@ gFMPrefs.selectApplication = function () {
     this.refreshSettings();
   }
 }
+
+gFMPrefs.saveDefaultPrefs = function () {
+  gFMPrefs.settings.defaultPrefs = document.getElementById("default-prefs").value;
+}
+
+window.addEventListener("load",function () {
+  window.removeEventListener("load",arguments.callee,false);
+  gFMPrefs.onload();
+  
+}, false);

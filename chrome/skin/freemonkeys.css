@@ -291,3 +291,6 @@ input[type="checkbox"]+span {
   cursor: pointer;
   -moz-user-select:none;
 }
+#profile-selection.disabled {
+  color: gray;
+}

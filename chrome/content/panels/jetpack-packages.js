@@ -193,7 +193,7 @@ gFMJetpackPackages.run = function () {
   function listener(a,b) {
     Components.utils.reportError(a+" : "+b);
   }
-  FreemonkeysZoo.runJetpack(gFMPrefs.defaultApplicationPath, gFMPrefs.defaultProfilePath, resourcesPaths, jetpackPath, listener);
+  FreemonkeysZoo.runJetpack(gFMPrefs.defaultApplicationPath, gFMPrefs.defaultProfilePath, gFMPrefs.settings.copyProfile, gFMPrefs.settings.defaultPrefs, resourcesPaths, jetpackPath, listener);
 }
 
 

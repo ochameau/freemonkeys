@@ -1,4 +1,4 @@
-const EXPORTED_SYMBOLS = ["PuppetConnexion"];
+const EXPORTED_SYMBOLS = ["PuppetConnexion","addLocalObject"];
 
 const hiddenWindow = Components.classes["@mozilla.org/appshell/appShellService;1"]
         .getService(Components.interfaces.nsIAppShellService)
@@ -249,7 +249,7 @@ PuppetConnexion.prototype.connect = function (host, port, callback, count)
     hiddenWindow.setTimeout(function () {
 	    if (transport.isAlive()) {
         callback(true,null);
-	    } else if (count>10) {
+	    } else if (count>30) {
         callback(false,"Connexion timeout");
 	    } else {
         _self.close();
@@ -431,7 +431,9 @@ PuppetConnexion.prototype.write = function (buffer) {
     var thread = Components.classes["@mozilla.org/thread-manager;1"]
                .getService()
                .currentThread;
-    thread.processNextEvent(false);
+    
+    while(thread.hasPendingEvents())
+      thread.processNextEvent(false);
   }
   this.outstream.flush();
 }
@@ -459,7 +461,9 @@ PuppetConnexion.prototype.syncRequest = function (action, args) {
     var thread = Components.classes["@mozilla.org/thread-manager;1"]
                .getService()
                .currentThread;
-    thread.processNextEvent(false);
+    
+    while(thread.hasPendingEvents())
+      thread.processNextEvent(false);
     
   }
   

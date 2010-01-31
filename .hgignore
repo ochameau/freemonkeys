@@ -5,3 +5,4 @@ syntax: glob
 ./updates
 ./profiles
 ./prof
+./remote-extensions/network@freemonkeys.com/resource/moz-puppet.js

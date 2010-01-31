@@ -178,11 +178,11 @@ gFreemonkeys.execute = function () {
   try {
     if (!gFMPrefs.defaultApplicationPath)
       return this._testsListener("error",-1,"Application binary is not set, please go to the settings panel!");
-    if (!gFMPrefs.defaultProfilePath)
+    if (!gFMPrefs.defaultProfilePath && !gFMPrefs.settings.useEmptyProfile)
       return this._testsListener("error",-1,"Profile path is not set, please go to the settings panel!");
     
     this._testStartTime = new Date().getTime();
-    FreemonkeysZoo.execute(gFMPrefs.defaultApplicationPath, gFMPrefs.defaultProfilePath, gFMEditor.content, this._testsListener);
+    FreemonkeysZoo.execute(gFMPrefs.defaultApplicationPath, gFMPrefs.defaultProfilePath, gFMPrefs.settings.copyProfile, gFMPrefs.settings.defaultPrefs, gFMEditor.content, this._testsListener);
   } catch(e) {
     this._testsListener("internal-exception",-1,e.toString());
   }
