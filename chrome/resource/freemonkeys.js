@@ -234,7 +234,8 @@ FreemonkeysZoo.prepareProfile = function (profile, doACopy, defaultPrefs) {
   mozPuppet.append("moz-puppet.js");
   var dstMozPuppet = fmNetworkResourcesDir.clone();
   dstMozPuppet.append("moz-puppet.js");
-  dstMozPuppet.remove(false);
+  if (dstMozPuppet.exists())
+    dstMozPuppet.remove(false);
   mozPuppet.copyTo(fmNetworkResourcesDir,"moz-puppet.js");
   
   // Set default prefs 
