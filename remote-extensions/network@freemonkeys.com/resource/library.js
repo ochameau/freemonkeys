@@ -17,6 +17,8 @@ Components.utils.import("resource://fm-network/moz-puppet.js");
 
 var macro = {};
 
+macro.remotable = true; // Say to moz-puppet that this object can be read/write and called remotely
+
 macro.jetpackExecute = function (resourcesPathsWrapper, jetpackPath, listener) {
 try {
   listener("start",null,null);
@@ -43,7 +45,7 @@ try {
 
 macro.execute = function (code, listener) {
 try {
-  listener("start",null,null);
+  listener.execAsync(["start",null,null]);
   var garden = Components.utils.Sandbox(this.__parent__);//"http://localhost.localdomain.:0/");
   garden.__proto__ = this.__parent__.wrappedJSObject?this.__parent__.wrappedJSObject:this.__parent__;
   
@@ -53,10 +55,10 @@ try {
   garden.monkey = {};
   
   garden.___api_exception = function (exception) {
-    listener("exception",Components.stack.caller.caller.lineNumber+1,Components.stack.caller.name+" : "+exception);
+    listener.execAsync(["exception",Components.stack.caller.caller.lineNumber+1,Components.stack.caller.name+" : "+exception]);
   }
   garden.___api_callback_exception = function (exception, callee) {
-    listener("internal-exception",callee.caller.lineNumber+1,callee.name+" : "+exception);
+    listener.execAsync(["internal-exception",callee.caller.lineNumber+1,callee.name+" : "+exception]);
   }
   garden.___listener = listener;
   
@@ -98,12 +100,12 @@ try {
       if (s && s.filename=="test-buffer")
         line = s.lineNumber+1;
     }
-    listener("exception",line,e.toString());
+    listener.execAsync(["exception",line,e.toString()]);
     Components.utils.reportError("Test exception : \n"+e+"\n"+e.stack);
   }
-  listener("end",null,null);
+  listener.execAsync(["end",null,null]);
 } catch(e) {
-  listener("internal-exception",-1,e.toString());
+  listener.execAsync(["internal-exception",-1,e.toString()]);
   Components.utils.reportError("Internal exception during test :\n"+e+"\n"+e.stack);
 }
   try {

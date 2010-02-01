@@ -120,12 +120,13 @@ FreemonkeysZoo.freeThemAll = function () {
   }
 }
 
-FreemonkeysZoo.free = function (application, profile) {
-  var monkey = this._pens[application][profile];
+FreemonkeysZoo.free = function (application, profilePath, useEmptyProfile) {
+  var profileKey = useEmptyProfile ? "empty" : profilePath;
+  var monkey = this._pens[application][profileKey];
   if (!monkey) return;
   monkey.syncMacro.quit();
   monkey.puppet.close();
-  delete this._pens[application][profile];
+  delete this._pens[application][profileKey];
   if (monkey.temporaryProfile) {
     hiddenWindow.setTimeout(function () {
       monkey.temporaryProfile.remove(true);

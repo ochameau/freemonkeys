@@ -287,7 +287,7 @@ gFreemonkeys.selectNode = function () {
 }
 
 gFreemonkeys.freeTheMonkey = function () {
-  FreemonkeysZoo.free(gFMPrefs.defaultApplicationPath, gFMPrefs.defaultProfilePath);
+  FreemonkeysZoo.free(gFMPrefs.defaultApplicationPath, gFMPrefs.defaultProfilePath, gFMPrefs.settings.useEmptyProfile);
 }
 
 gFreemonkeys.saveWindowParams = function () {
