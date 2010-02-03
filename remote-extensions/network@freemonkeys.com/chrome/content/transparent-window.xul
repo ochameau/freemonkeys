@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+
+<window 
+        windowtype="freemonkeys:inspector" id="freemonkeys-inspector"
+        title="Freemonkeys element inspector" 
+        hidechrome="true" style="background-color: transparent"
+        xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+        xmlns:html="http://www.w3.org/1999/xhtml" 
+        >
+  
+  <iframe id="iframe" src="inspector.html" flex="1" />
+  
+</window>
+

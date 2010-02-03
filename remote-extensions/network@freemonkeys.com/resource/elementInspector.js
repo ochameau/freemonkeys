@@ -23,25 +23,40 @@ elementInspector.startHighlighting = function (callback) {
   this.stopHighlighting();
   
   var ww = Components.classes["@mozilla.org/embedcomp/window-watcher;1"].getService(Components.interfaces.nsIWindowWatcher);
+  var url = "chrome://fm-network/content/transparent-window.xul";
+  //url = "data:text/html;charset=utf-8,";
   var infoWin = ww.openWindow(
                 null, // parent
-                "data:text/html;charset=utf-8,",
+                url,
                 "fm-node-info", // name
-                "resizable=no,scrollbars=no,status=no,width=1,height=1,popup=yes", 
+                "resizable=no,scrollbars=no,status=no,width=1,height=1,hidechrome=true", 
                 null); // arguments
   infoWin.addEventListener("load",function () {
-    var width = 400; var height = 200;
-    infoWin.document.body.innerHTML="...";
-    infoWin.document.body.style.backgroundColor="#ddd";
-    infoWin.document.body.style.border="1px solid black";
-    infoWin.document.body.style.padding="0";
-    infoWin.document.body.style.margin="0";
-    infoWin.document.body.style.overflow="auto";
-    infoWin.document.body.style.height=height+"px";
     
-    infoWin.resizeTo(400,200);
-    infoWin.moveTo(hiddenWindow.screen.availWidth-width-20,hiddenWindow.screen.availHeight-height-20);
+    var iframe = infoWin.document.getElementById("iframe");
+    
+    var doc = iframe.contentDocument;
+    
+    elementInspector.inspectorUI = {
+      topWindow: {
+        line: doc.getElementById('top-window'),
+        position: doc.getElementById('top-win-position'),
+        nth: doc.getElementById('top-win-nth'),
+        name: doc.getElementById('top-win-name')
+      },
+      subWindows: doc.getElementById('sub-windows'),
+      screenshot: doc.getElementById('screenshot-img'),
+      element: doc.getElementById('element'),
+      elementAnonymous: doc.getElementById('element-anonymous'),
+    };
+    hiddenWindow.setTimeout(function () {
+      var width = 400; var height = 200;
+      infoWin.resizeTo(width, height);
+      infoWin.moveTo(hiddenWindow.screen.availWidth-width-20,hiddenWindow.screen.availHeight-height-20);
+    }, 1000);
+    
   },false);
+  
   this.infoWin = infoWin;
   
   var wm = Components.classes["@mozilla.org/appshell/window-mediator;1"]
@@ -53,6 +68,7 @@ elementInspector.startHighlighting = function (callback) {
   }
   var win = wm.getMostRecentWindow(null);
   win.focus();
+  
 }
 
 elementInspector.stopHighlighting = function () {
@@ -149,58 +165,106 @@ elementInspector.getWindowIdentity = function (id) {
 
 elementInspector.updateNodeInfo = function (node) {
   var info = this.getNodeInfo(node);
-  var html = "";
-  html += '<div style="font-size: 0.8em;margin-bottom: 10px;">';
   
-  html += '<div style="font-weight: bold; font-size: 1em; padding-bottom: 10px;">';
+  var hasTab = false;
+  var hasSidebar = false;
+  var isOnlyTop = true;
   
   function printWindow(winInfo) {
     if (winInfo.type=="sub-known") {
-      var identity = elementInspector.getWindowIdentity(winInfo.id);
-      html += "Child win: "+identity.name+"<br />";
-      html += "Of ";
+      
       printWindow(winInfo.parent);
+      var identity = elementInspector.getWindowIdentity(winInfo.id);
+      var desc = "<li>Child win: "+identity.name+"</li>";
+      elementInspector.inspectorUI.subWindows.innerHTML += desc;
+      if (!hasSidebar)
+        hasSidebar = winInfo.id.match(/sidebar/);
+      isOnlyTop = false;
+      
+      return winInfo.id.match(/sidebar/)?"sidebar":"";
+      
     } else if (winInfo.type=="sub-unknown") {
-      html += "Unknown child win: "+winInfo.xpath+" <br />";
-      html += "Of ";
+      
       printWindow(winInfo.parent);
+      var desc = "<li>Unknown child win: "+winInfo.xpath+" </li>";
+      elementInspector.inspectorUI.subWindows.innerHTML += desc;
+      isOnlyTop = false;
+      
     } else if (winInfo.type=="tab") {
-      html += "Current firefox tab<br />";
-      html += "Of ";
+      
       printWindow(winInfo.top);
+      var desc = "<li>Current firefox tab</li>";
+      elementInspector.inspectorUI.subWindows.innerHTML += desc;
+      hasTab = true;
+      isOnlyTop = false;
+      
+      return "tab";
+      
     } else if (winInfo.type=="top-known") {
+      
+      
       var identity = elementInspector.getWindowIdentity(winInfo.id);
+      var position = "nth";
       if (winInfo.position.isFirst)
-        html += "topmost";
+        position = "topmost";
       else if (winInfo.position.isLast)
-        html += "bottommost";
-      else
-        html += winInfo.position.index+"-nth";
-      html += " "+identity.name;
+        position = "bottommost";
+      
+      elementInspector.inspectorUI.topWindow.position.value = position;
+      if (position=="nth") {
+        elementInspector.inspectorUI.topWindow.nth.value = winInfo.position.index;
+        elementInspector.inspectorUI.topWindow.nth.style.display = "";
+      } else {
+        elementInspector.inspectorUI.topWindow.nth.style.display = "none";
+      }
+      elementInspector.inspectorUI.topWindow.name.textContent = identity.name;
       
     } else if (winInfo.type=="top-unknown") {
-      html += "Unknown top win : id="+winInfo.info.id+" name="+winInfo.info.name+" type="+winInfo.info.type+" location="+winInfo.info.location;
+      
+      var desc = "Unknown top win : id="+winInfo.info.id+" name="+winInfo.info.name+" type="+winInfo.info.type+" location="+winInfo.info.location;
       if (winInfo.position.isFirst)
-        html += " first";
+        desc += " first";
       if (winInfo.position.isLast)
-        html += " last";
-      html += " "+winInfo.position.index+"-nth";
+        desc += " last";
+      desc += " "+winInfo.position.index+"-nth";
+      elementInspector.inspectorUI.topWindow.nth.value = winInfo.position.index;
+      elementInspector.inspectorUI.topWindow.name.textContent = desc;
+      
     }
+    
   }
-  html += 'Window: ';
   
-  printWindow(this.getWindowInfo(node));
+  elementInspector.inspectorUI.subWindows.innerHTML = "";
+  var lastType = printWindow(this.getWindowInfo(node));
+  
+  var winType = isOnlyTop?"window":"sub-win";
+  if (hasSidebar)
+    winType = "sidebar";
+  else if (hasSidebar && lastType!="sidebar")
+    winType = "sub-sidebar";
+  
+  if (hasTab && lastType=="tab")
+    winType = "tab";
+  else if (hasTab)
+    winType = "sub-tab";
+  
+  elementInspector.inspectorUI.topWindow.line.className = winType;
   
   
-  html += '</div>';
+  elementInspector.inspectorUI.element.textContent = info.xpath;
   
-  html += '<div style="font-weight: bold; font-size: 1em; padding-bottom: 10px;">'+info.xpath+'</div>';
-  if (info.binding)
-    html += '<div style="font-size: 1em; padding-bottom: 10px;">anonymous: '+info.binding+'</div>';
-  html += '<div style="text-align: center">';
-  html += '<img src="'+info.preview.data+'" style="max-width:350px; max-height: 150px;border: 1px solid #ddd; -moz-box-shadow:0 0 10px #000; " width="'+info.preview.width+'" height="'+info.preview.height+'" />'
-  html += '</div>';
-  this.infoWin.document.body.innerHTML=html;
+  if (info.binding) {
+    elementInspector.inspectorUI.elementAnonymous.textContent = info.binding;
+    elementInspector.inspectorUI.elementAnonymous.style.display="";
+  } else {
+    elementInspector.inspectorUI.elementAnonymous.style.display="none";
+  }
+  
+  elementInspector.inspectorUI.screenshot.style.display="";
+  elementInspector.inspectorUI.screenshot.src = info.preview.data;
+  elementInspector.inspectorUI.screenshot.setAttribute("width",info.preview.width);
+  elementInspector.inspectorUI.screenshot.setAttribute("height",info.preview.height);
+  
 }
 
 elementInspector.getXPath = function (elt,rootNode) {

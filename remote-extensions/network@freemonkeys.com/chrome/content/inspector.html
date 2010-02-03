@@ -1,0 +1,72 @@
+<html>
+<head>
+<title>Freemonkeys element inspector</title>
+<style>
+body {
+  background-color: transparent;
+  max-width: 400px;
+  max-height: 300px;
+  overflow: hidden;
+}
+#rounded-top-box {
+  -moz-border-radius: 10px;
+  -moz-box-shadow:0 0 10px #aaf;
+  border: 1px solid #ccf;
+  background-color: #ddd;
+  padding: 10px;
+}
+#screenshot {
+  text-align: center;
+}
+#screenshot-img {
+  max-width:350px; max-height: 150px;border: 1px solid #ddd; -moz-box-shadow:0 0 10px #000; 
+}
+#top-window {
+  padding-left: 24px;
+  background-repeat: no-repeat;
+}
+#top-window.window {
+  background-image: url('icons/24-frame.png');
+}
+#top-window.sub-win {
+  background-image: url('icons/24-frame-open.png');
+}
+#top-window.sidebar {
+  background-image: url('icons/24-sidebar.png');
+}
+#top-window.sub-sidebar {
+  background-image: url('icons/24-sidebar.png');
+}
+#top-window.tab {
+  background-image: url('icons/24-tab.png');
+}
+#top-window.sub-tab {
+  background-image: url('icons/24-tab-open.png');
+}
+
+#top-win-nth {
+  width: 2em;
+}
+</style>
+</head>
+<body>
+
+
+<div id="rounded-top-box">
+  <div id="top-window">
+    <select id="top-win-position">
+      <option value="topmost">Topmost</option>
+      <option value="nth">n-th</option>
+      <option value="bottommost">Bottommost</option>
+    </select>
+    <input id="top-win-nth" type="text" value="" style="display: none;" />
+    <span id="top-win-name"></span>
+  </div>
+  <div id="sub-windows"></div>
+  <div id="element"></div>
+  <div id="element-anonymous"></div>
+  <div id="screenshot"><img id="screenshot-img" src="" style="display:none" /></div>
+</div>
+
+</body>
+</html>
