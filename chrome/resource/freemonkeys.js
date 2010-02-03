@@ -294,10 +294,10 @@ FreemonkeysZoo.createEmptyProfile = function () {
 
 FreemonkeysZoo.runJetpack = function (application, profilePath, copyProfile, defaultPrefs, resourcesPaths, jetpackPath, listener) {
   var temporaryProfile = null;
-  var useEmptyProfile = !profile;
+  var useEmptyProfile = !profilePath;
   if (useEmptyProfile) {
     temporaryProfile = FreemonkeysZoo.createEmptyProfile();
-    profile = temporaryProfile.path;
+    profilePath = temporaryProfile.path;
   }
   
   FreemonkeysZoo.getMonkey(application, profilePath, useEmptyProfile, copyProfile, defaultPrefs, listener, 
