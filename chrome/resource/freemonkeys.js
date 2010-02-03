@@ -105,23 +105,37 @@ FreemonkeysZoo.getLivingMonkeys = function () {
   return l;
 }
 
-FreemonkeysZoo.freeThemAll = function () {
+FreemonkeysZoo.freeThemAll = function (callback) {
+  var total=0;
+  var done=0;
+  var forDone=false;
+  function checkStatus() {
+    if (done==total && forDone) {
+      callback();
+    }
+  }
   for(var i in this._pens) {
     for(var j in this._pens[i]) {
+      total++;
       var m = this._pens[i][j];
       m.syncMacro.quit();
       m.puppet.close();
       if (m.temporaryProfile) {
         hiddenWindow.setTimeout(function () {
           m.temporaryProfile.remove(true);
-        }, 3000);
+          done++;checkStatus();
+        }, 2000);
+      } else {
+        done++;checkStatus();
       }
     }
   }
+  forDone=true;
+  checkStatus();
 }
 
-FreemonkeysZoo.free = function (application, profilePath, useEmptyProfile) {
-  var profileKey = useEmptyProfile ? "empty" : profilePath;
+FreemonkeysZoo.free = function (application, profilePath) {
+  var profileKey = !profilePath ? "empty" : profilePath;
   var monkey = this._pens[application][profileKey];
   if (!monkey) return;
   monkey.syncMacro.quit();
@@ -130,7 +144,7 @@ FreemonkeysZoo.free = function (application, profilePath, useEmptyProfile) {
   if (monkey.temporaryProfile) {
     hiddenWindow.setTimeout(function () {
       monkey.temporaryProfile.remove(true);
-    }, 3000);
+    }, 2000);
   }
 }
 
@@ -165,24 +179,38 @@ FreemonkeysZoo.writeToFile = function (file, data) {
   converter.close(); // this closes foStream
 }
 
-FreemonkeysZoo.prepareProfile = function (profile, doACopy, defaultPrefs) {
-  // Init profile, check if it's here and valid
-  var profileFile = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
-  try {
-    profileFile.initWithPath(profile);
-  } catch(e) {
-    throw new Error("Profile directory is not valid : "+e);
-  }
-  try {
-    if (!profileFile.exists())
-      profileFile.create(Components.interfaces.nsIFile.DIRECTORY_TYPE, 0777);
-  } catch(e) {
-    throw new Error("Profile directory doesn't exist, nor are able to create it empty : "+e);
+FreemonkeysZoo.prepareProfile = function (profilePath, doACopy, defaultPrefs) {
+  var profileFile;
+  
+  if (!profilePath) {
+    
+    var profileFile = Components.classes["@mozilla.org/file/directory_service;1"].
+                        getService(Components.interfaces.nsIProperties).
+                        get("TmpD", Components.interfaces.nsIFile);
+    profileFile.append("tmp-freemonkeys-profile");
+    profileFile.createUnique(Components.interfaces.nsIFile.DIRECTORY_TYPE, 0777);
+    
+  } else {
+  
+    // Init profile, check if it's here and valid
+    profileFile = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
+    try {
+      profileFile.initWithPath(profilePath);
+    } catch(e) {
+      throw new Error("Profile directory is not valid : "+e);
+    }
+    try {
+      if (!profileFile.exists())
+        profileFile.create(Components.interfaces.nsIFile.DIRECTORY_TYPE, 0777);
+    } catch(e) {
+      throw new Error("Profile directory doesn't exist, nor are able to create it empty : "+e);
+    }
+    
   }
   
   // Do a copy of the profile to keep it clean
   // and always have the same one for each test execution!
-  if (doACopy) {
+  if (doACopy && profilePath) {
     var dstFile = Components.classes["@mozilla.org/file/directory_service;1"].  
                       getService(Components.interfaces.nsIProperties).  
                       get("TmpD", Components.interfaces.nsIFile);
@@ -190,7 +218,7 @@ FreemonkeysZoo.prepareProfile = function (profile, doACopy, defaultPrefs) {
       dstFile.append("profile-copy");  
       if (dstFile.exists())
         dstFile.remove(true);
-      profileFile.copyTo(dstFile.parent(),"profile-copy");
+      profileFile.copyTo(dstFile.parent,"profile-copy");
       profileFile = dstFile;
     } catch(e) {
       throw new Error("Unable to create a temporary profile directory and copy source profile into it : "+e);
@@ -251,11 +279,14 @@ FreemonkeysZoo.prepareProfile = function (profile, doACopy, defaultPrefs) {
     prefsFile.append("remote-prefs.js");
     FreemonkeysZoo.writeToFile(prefsFile, defaultPrefs);
   }
+  
+  return profileFile;
 }
 
 var gPortNumber = 9000;
-FreemonkeysZoo.getMonkey = function (application, profilePath, useEmptyProfile, copyProfile, defaultPrefs, listener, onMonkeyAlive) {
-  var profileKey = useEmptyProfile ? "empty" : profilePath;
+FreemonkeysZoo.getMonkey = function (application, profilePath, copyProfile, defaultPrefs, listener, onMonkeyAlive) {
+  
+  var profileKey = !profilePath ? "empty" : profilePath;
   if (FreemonkeysZoo._pens[application] && FreemonkeysZoo._pens[application][profileKey]) {
     if (FreemonkeysZoo._pens[application][profileKey].puppet.isAlive())
       return onMonkeyAlive(FreemonkeysZoo._pens[application][profileKey]);
@@ -266,15 +297,17 @@ FreemonkeysZoo.getMonkey = function (application, profilePath, useEmptyProfile, 
   listener("monkey",-1,"launch");
   var port = gPortNumber++;
   
-  FreemonkeysZoo.prepareProfile(profilePath, copyProfile, defaultPrefs);
-  Application.start(application, profilePath, port);
+  var profileFile = FreemonkeysZoo.prepareProfile(profilePath, copyProfile, defaultPrefs);
+  Application.start(application, profileFile.path, port);
   
-  Application.connect("localhost", port, profilePath, 
+  Application.connect("localhost", port, profileFile.path, 
     function (success, res) {
       if (success) {
         if (!FreemonkeysZoo._pens[application])
           FreemonkeysZoo._pens[application] = {};
         FreemonkeysZoo._pens[application][profileKey] = res;
+        if (copyProfile || !profilePath)
+          res.temporaryProfile = profileFile;
         onMonkeyAlive(res);
       } else {
         error = res.msg;
@@ -285,25 +318,13 @@ FreemonkeysZoo.getMonkey = function (application, profilePath, useEmptyProfile, 
 }
 
 FreemonkeysZoo.createEmptyProfile = function () {
-  var file = Components.classes["@mozilla.org/file/directory_service;1"].
-                       getService(Components.interfaces.nsIProperties).
-                       get("TmpD", Components.interfaces.nsIFile);
-  file.append("tmp-freemonkeys-profile");
-  file.createUnique(Components.interfaces.nsIFile.DIRECTORY_TYPE, 0777);
-  return file;
+  
 }
 
 FreemonkeysZoo.runJetpack = function (application, profilePath, copyProfile, defaultPrefs, resourcesPaths, jetpackPath, listener) {
-  var temporaryProfile = null;
-  var useEmptyProfile = !profilePath;
-  if (useEmptyProfile) {
-    temporaryProfile = FreemonkeysZoo.createEmptyProfile();
-    profilePath = temporaryProfile.path;
-  }
   
-  FreemonkeysZoo.getMonkey(application, profilePath, useEmptyProfile, copyProfile, defaultPrefs, listener, 
+  FreemonkeysZoo.getMonkey(application, profilePath, copyProfile, defaultPrefs, listener, 
     function (monkey) {
-      monkey.temporaryProfile = temporaryProfile;
       monkey.asyncMacro.execObjectFunction(
           "jetpackExecute",
           [resourcesPaths, jetpackPath, listener],
@@ -316,14 +337,8 @@ FreemonkeysZoo.runJetpack = function (application, profilePath, copyProfile, def
 }
 
 FreemonkeysZoo.execute = function (application, profilePath, copyProfile, defaultPrefs, code, listener) {
-  var temporaryProfile = null;
-  var useEmptyProfile = !profilePath;
-  if (useEmptyProfile) {
-    temporaryProfile = FreemonkeysZoo.createEmptyProfile();
-    profilePath = temporaryProfile.path;
-  }
   
-  FreemonkeysZoo.getMonkey(application, profilePath, useEmptyProfile, copyProfile, defaultPrefs, listener, 
+  FreemonkeysZoo.getMonkey(application, profilePath, copyProfile, defaultPrefs, listener, 
     function (monkey) {
       listener("monkey",-1,"ready");
       monkey.asyncMacro.execObjectFunction(

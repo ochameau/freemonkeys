@@ -287,7 +287,7 @@ gFreemonkeys.selectNode = function () {
 }
 
 gFreemonkeys.freeTheMonkey = function () {
-  FreemonkeysZoo.free(gFMPrefs.defaultApplicationPath, gFMPrefs.defaultProfilePath, gFMPrefs.settings.useEmptyProfile);
+  FreemonkeysZoo.free(gFMPrefs.defaultApplicationPath, gFMPrefs.defaultProfilePath);
 }
 
 gFreemonkeys.saveWindowParams = function () {
@@ -325,15 +325,20 @@ gFreemonkeys.onunload = function () {
   
   gFMEditor.onunload();
   
+  function shutdown() {
+    // Ask to shutdown in order to close JSConsole automatically
+    var appStartup = Components.classes['@mozilla.org/toolkit/app-startup;1'].
+        getService(Components.interfaces.nsIAppStartup);
+    appStartup.quit(Components.interfaces.nsIAppStartup.eAttemptQuit);
+  }
+  
   try {
-    FreemonkeysZoo.freeThemAll();
+    FreemonkeysZoo.freeThemAll(shutdown);
   } catch(e) {
     Components.utils.reportError(e);
   }
-  // Ask to shutdown in order to close JSConsole automatically
-  var appStartup = Components.classes['@mozilla.org/toolkit/app-startup;1'].
-      getService(Components.interfaces.nsIAppStartup);
-  appStartup.quit(Components.interfaces.nsIAppStartup.eAttemptQuit);
+  
+  window.setTimeout(shutdown, 5000);
 }
 
 
