@@ -14,8 +14,9 @@ no matter what .focus() function we call :/
 - try to avoid retrieving always the topmost windows by switching to mousedown and prevent event dispatch
 - highlight all nodes, on each action (click, type, screenshot, ...)
 - find why keydown/up/press doesn't work on xul:textbox
-- rewrite network API, to avoid cycle dead lock (return complete object dump for almost all calls)
-- and so, kill empty profile bug, which avoid temporary profile dir to not be removed!
+- network API better with async calls to listener but:
+   - call may be mixed in time and appear in wrong order in report
+   - unable to retrieve on first launch a macro reference
 
 #jetpack:
 - some directories in settings

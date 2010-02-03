@@ -91,7 +91,7 @@ elements.MonkeyElement =
         var bo = this.getBoxobject();
         var sc = this.rectToCanvas(node.ownerDocument.defaultView,bo.x,bo.y,bo.width,bo.height, maxSize?maxSize:600);
         var data = sc.canvas.toDataURL("image/jpeg", "");
-        ___listener("screenshot",Components.stack.caller.lineNumber+1,{boxObject:bo, data:data});
+        ___listener.execAsync(["screenshot",Components.stack.caller.lineNumber+1,{boxObject:bo, data:data}]);
         return data;
       } catch(e) {
         ___api_exception(e);

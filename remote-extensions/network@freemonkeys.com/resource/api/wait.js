@@ -47,7 +47,7 @@ wait._assert = function (fun, args) {
     args : argsData.join(", ")
   };
   
-  ___listener(success?"assert-pass":"assert-fail",Components.stack.caller.caller.lineNumber+1,data);
+  ___listener.execAsync([success?"assert-pass":"assert-fail",Components.stack.caller.caller.lineNumber+1,data]);
 }
 
 wait.waitForSuccess = function waitForSuccess(fun) {

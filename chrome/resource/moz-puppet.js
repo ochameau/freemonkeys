@@ -47,7 +47,7 @@ var PuppetNetworkAPI = {
       
       return {type:"remote-object", id:obj._____remoteId};
       
-    } else if (typeof obj=="object") {
+    } else if (typeof obj=="object" && obj.remotable===true) {
       
       var attributes=[];
       var uuid=newUUID();
@@ -65,6 +65,31 @@ var PuppetNetworkAPI = {
           attributes.push({name:name,type:typeof att});
       }
       return {type:"local-object", id:uuid, attributes:attributes};
+    
+    } else if (typeof obj=="object") {
+      
+      //var uuid=newUUID();
+      //localObjects[uuid]=obj;
+      function clone(o) {
+        if (typeof o=="object") {
+          var objDump = {};
+          for(var name in o) {
+            var att=null;
+            try {
+              objDump[name]=clone(o[name]);
+            } catch(e) {
+              dump("!!! Unable to read attribute : "+name+"\n");
+            }
+          }
+          return objDump;
+        } else if (typeof o=="function") {
+          Components.utils.reportError("network object dump contains a function!");
+          return function () {};
+        } else {
+          return o;
+        }
+      }
+      return {type:"local-object-dump", dump:clone(obj)};
       
     } else if (typeof obj=="function") {
       
@@ -130,9 +155,13 @@ var PuppetNetworkAPI = {
       }
       return obj;
       
+    } else if (response.type=="local-object-dump") {
+      
+      var obj = response.dump;
+      return obj;
+      
     } else if (response.type=="array") {
     
-      dump("receive array\n");
       var array = [];
       for(var i=0; i<response.array.length; i++) {
         array.push(PuppetNetworkAPI._remoteObjectToLocal(puppet, response.array[i]));
@@ -141,13 +170,21 @@ var PuppetNetworkAPI = {
       
     } else if (response.type=="function") {
       
-      return (function () {
+      var fun = (function () {
         var args=[];
         for(var i=0;i<arguments.length;i++)
           args.push(arguments[i]);
         return puppet.blocking.execFunction(response.id,args);
       });
+      fun.execAsync = function (args,callback) {
+        return puppet.async.execFunction(response.id,args,callback);
+      }
+      return fun;
       
+    } else if (response.type=="string" || response.type=="number" ||response.type=="boolean") {
+      
+      return response.value;
+        
     } else {
       
       dump("receive unknown type : "+response.type+"\n");
@@ -345,24 +382,23 @@ PuppetConnexion.prototype.tryRead = function (count) {
   var json=null;
   try {
     var idx=this._buffer.indexOf("\n\n\n");
+    while (idx==0) {
+      this._buffer = this._buffer.substr(3);
+      idx = this._buffer.indexOf("\n\n\n");
+    }
     if (idx>0 && this._buffer.length>idx+3) {
-      try {
-        var test=this._buffer.substr(0,idx);
-        //dump("Split : "+idx+"\n"+test);
-        json=eval(test);
-      } catch(e) {
-        dump("!!! split eval error : "+test+"\n");
-      }
-      this._buffer = this._buffer.substr(idx);
-      json=eval("("+this._buffer+")");
-      this._buffer = "";
+      
+      var chunk=this._buffer.substr(0,idx);
+      dump("Split : "+idx+"\n<<<"+chunk+">>>");
+      json=eval("("+chunk+")");
+      this._buffer = this._buffer.substr(idx+3);
     } else {
       json=eval("("+this._buffer+")");
       this._buffer = "";
     }
     
   } catch(e) {
-    dump("!!! ex eval async receive :"+e+"\n with : \n"+this._buffer+"<<\n\n");
+    dump("!!! ex eval async receive :"+e+"\n idx="+idx+" length="+this._buffer.length+" with : \n"+this._buffer+"<<\n\n");
     return;
   }
   
@@ -566,6 +602,8 @@ AsyncPuppet.prototype.convertResponseToObject = function (response) {
       }
     };
     return obj;
+  } else if (response.type=="local-object-dump") {
+    return obj.dump;
   } else if (response.type=="remote-object") {
     return localObjects[response.id];
   } else if (response.type=="array") {
@@ -618,6 +656,25 @@ AsyncPuppet.prototype.execObjectFunction = function (objectId,functionName,args,
         
     }
   );
+  
+}
+
+AsyncPuppet.prototype.execFunction = function (functionId,args,callback) {
+
+  // Pre-process function arguments in order to detect distants objects 
+  var argsProcessed=[];
+  for(var i=0; i<args.length; i++)
+    argsProcessed.push(PuppetNetworkAPI._localObjectToRemote(args[i]));
+  
+  // Call firefox session
+  var _self=this;
+  this.connexion.asyncRequest ("execFunction",[functionId,argsProcessed],
+    function (response) {
+        
+        if (callback)
+          callback( _self.convertResponseToObject(response) );
+        
+    });
   
 }
 

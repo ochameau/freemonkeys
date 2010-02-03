@@ -49,7 +49,7 @@ assert._assert = function (assert, args, callee) {
     args : argsData.join(", ")
   };
   
-  ___listener(assert?"assert-pass":"assert-fail",callee.caller.lineNumber+1,data);
+  ___listener.execAsync([assert?"assert-pass":"assert-fail",callee.caller.lineNumber+1,data]);
 }
 
 assert.isTrue = function isTrue(v) {
