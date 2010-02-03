@@ -16,7 +16,8 @@ http.start = function (port) {
 }
 
 http.stop = function () {
-  http._server.stop(function () {});
+  if (!http._server.isStopped())
+    http._server.stop(function () {});
 }
 
 http.registerDirectory = function (serverPath, localPath) {

@@ -464,12 +464,14 @@ PuppetConnexion.prototype.write = function (buffer) {
     dump("Send "+write+"/"+len+"\n");
     buffer=buffer.substr(write);
     len=buffer.length;
+    /*
     var thread = Components.classes["@mozilla.org/thread-manager;1"]
                .getService()
                .currentThread;
     
     while(thread.hasPendingEvents())
       thread.processNextEvent(false);
+    */
   }
   this.outstream.flush();
 }

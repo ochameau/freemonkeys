@@ -50,6 +50,10 @@ wait._assert = function (fun, args) {
   ___listener.execAsync([success?"assert-pass":"assert-fail",Components.stack.caller.caller.lineNumber+1,data]);
 }
 
+wait.setTimeout = function (f,t) {
+  return hiddenWindow.setTimeout(f,t?t:2000);
+}
+
 wait.waitForSuccess = function waitForSuccess(fun) {
   
 }
