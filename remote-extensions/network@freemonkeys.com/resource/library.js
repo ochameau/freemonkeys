@@ -45,6 +45,12 @@ try {
 
 macro.execute = function (code, listener) {
 try {
+  // Try to clear the JS Console, if there is one:
+  try {
+    var cs = Components.classes["@mozilla.org/consoleservice;1"].getService(Components.interfaces.nsIConsoleService);
+    cs.logStringMessage(null);
+  } catch(e) {}
+  
   listener.execAsync(["start",null,null]);
   var garden = Components.utils.Sandbox(this.__parent__);//"http://localhost.localdomain.:0/");
   garden.__proto__ = this.__parent__.wrappedJSObject?this.__parent__.wrappedJSObject:this.__parent__;

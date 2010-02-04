@@ -338,6 +338,10 @@ FreemonkeysZoo.runJetpack = function (application, profilePath, copyProfile, def
 
 FreemonkeysZoo.execute = function (application, profilePath, copyProfile, defaultPrefs, code, listener) {
   
+  // Clear JS Console
+  var cs = Components.classes["@mozilla.org/consoleservice;1"].getService(Components.interfaces.nsIConsoleService);
+  cs.logStringMessage(null);
+  
   FreemonkeysZoo.getMonkey(application, profilePath, copyProfile, defaultPrefs, listener, 
     function (monkey) {
       listener("monkey",-1,"ready");
