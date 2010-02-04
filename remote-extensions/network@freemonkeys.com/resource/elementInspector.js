@@ -16,48 +16,28 @@ const hiddenWindow = Components.classes["@mozilla.org/appshell/appShellService;1
 
 const elementInspector = {};
 
+elementInspector.paused = false;
 elementInspector.callback = null;
+
 elementInspector.startHighlighting = function (callback) {
   this.callback = callback;
+  this.paused = false;
   
   this.stopHighlighting();
   
   var ww = Components.classes["@mozilla.org/embedcomp/window-watcher;1"].getService(Components.interfaces.nsIWindowWatcher);
   var url = "chrome://fm-network/content/transparent-window.xul";
   //url = "data:text/html;charset=utf-8,";
-  var infoWin = ww.openWindow(
+  this.win = ww.openWindow(
                 null, // parent
                 url,
                 "fm-node-info", // name
                 "resizable=no,scrollbars=no,status=no,width=1,height=1,hidechrome=true", 
                 null); // arguments
-  infoWin.addEventListener("load",function () {
-    
-    var iframe = infoWin.document.getElementById("iframe");
-    
-    var doc = iframe.contentDocument;
-    
-    elementInspector.inspectorUI = {
-      topWindow: {
-        line: doc.getElementById('top-window'),
-        position: doc.getElementById('top-win-position'),
-        nth: doc.getElementById('top-win-nth'),
-        name: doc.getElementById('top-win-name')
-      },
-      subWindows: doc.getElementById('sub-windows'),
-      screenshot: doc.getElementById('screenshot-img'),
-      element: doc.getElementById('element'),
-      elementAnonymous: doc.getElementById('element-anonymous'),
-    };
-    hiddenWindow.setTimeout(function () {
-      var width = 400; var height = 200;
-      infoWin.resizeTo(width, height);
-      infoWin.moveTo(hiddenWindow.screen.availWidth-width-20,hiddenWindow.screen.availHeight-height-20);
-    }, 1000);
-    
+  this.win.addEventListener("load",function () {
+    elementInspector.win.removeEventListener("load",arguments.callee,false);
+    elementInspector.onPopupLoad();
   },false);
-  
-  this.infoWin = infoWin;
   
   var wm = Components.classes["@mozilla.org/appshell/window-mediator;1"]
                    .getService(Components.interfaces.nsIWindowMediator);
@@ -69,6 +49,64 @@ elementInspector.startHighlighting = function (callback) {
   var win = wm.getMostRecentWindow(null);
   win.focus();
   
+  
+}
+
+elementInspector.onPopupLoad = function () {
+  
+  var iframe = this.win.document.getElementById("iframe");
+  
+  var doc = iframe.contentDocument;
+  
+  elementInspector.dom = {
+    win: iframe.contentWindow,
+    doc: doc,
+    status: doc.getElementById('status'),
+    topWindow: {
+      line: doc.getElementById('top-window'),
+      position: doc.getElementById('top-win-position'),
+      nth: doc.getElementById('top-win-nth'),
+      type: doc.getElementById('top-win-known')
+    },
+    subWindows: doc.getElementById('sub-windows'),
+    screenshot: doc.getElementById('screenshot-img'),
+    element: {
+      line: doc.getElementById('element'),
+      xpath: doc.getElementById('element-xpath')
+    },
+    anonymous: {
+      line: doc.getElementById('element-anonymous'),
+      xpath:  doc.getElementById('element-anonymous-xpath')
+    }
+  };
+  this.refreshStatus();
+  
+  this.fillWindowsType();
+  
+  hiddenWindow.setTimeout(function () {
+    var width = 400; var height = 200;
+    elementInspector.win.resizeTo(width, height);
+    elementInspector.win.moveTo(hiddenWindow.screen.availWidth-width-20,hiddenWindow.screen.availHeight-height-20);
+  }, 1000);
+  
+  this.win.document.addEventListener("keydown",elementInspector._keyListener,true);
+}
+
+elementInspector.refreshStatus = function () {
+  if (this.paused)
+    this.dom.status.textContent = "Manual query edition, press CTRL to edit query";
+  else
+    this.dom.status.textContent = "Click to select a node or press CTRL to edit query";
+}
+
+elementInspector.fillWindowsType = function () {
+  for(var i=0; i<knownTopWindows.length; i++) {
+    var w = knownTopWindows[i];
+    var option = this.dom.doc.createElement("option");
+    option.value=w.id;
+    option.textContent=w.name;
+    this.dom.topWindow.type.appendChild(option);
+  }
 }
 
 elementInspector.stopHighlighting = function () {
@@ -80,23 +118,34 @@ elementInspector.stopHighlighting = function () {
     this.unregisterWindow(win);
   }
   
-  if (this.infoWin) {
-    this.infoWin.close();
-    this.infoWin=null;
+  if (this.win) {
+    this.win.document.removeEventListener("keydown",this._keyListener,true);
+    this.win.close();
+    this.win=null;
   }
   
   if (this._currentOver)
     this.unhighlightNode(this._currentOver);
+  
 }
 
 elementInspector.registerWindow = function (win) {
   win.document.addEventListener("mousemove",this._overListener,true);
   win.document.addEventListener("click",this._clickListener,true);
+  win.document.addEventListener("keydown",this._keyListener,true);
 }
 
 elementInspector.unregisterWindow = function (win) {
   win.document.removeEventListener("mousemove",this._overListener,true);
   win.document.removeEventListener("click",this._clickListener,true);
+  win.document.removeEventListener("keydown",this._keyListener,true);
+}
+
+// /!\ this != elementInspector /!\
+elementInspector._keyListener = function (event) {
+  if (event.keyCode!=17) return;
+  elementInspector.paused = !elementInspector.paused;
+  elementInspector.refreshStatus();
 }
 
 // /!\ this != elementInspector /!\
@@ -117,6 +166,7 @@ elementInspector._currentOver = null;
 
 // /!\ this != elementInspector /!\
 elementInspector._overListener = function (event) {
+  if (elementInspector.paused) return;
   if (event.originalTarget.ownerDocument.defaultView.name=="fm-node-info") return;
   
   var x=event.screenX;
@@ -164,6 +214,8 @@ elementInspector.getWindowIdentity = function (id) {
 }
 
 elementInspector.updateNodeInfo = function (node) {
+  if (!elementInspector.dom) return;
+  
   var info = this.getNodeInfo(node);
   
   var hasTab = false;
@@ -176,7 +228,7 @@ elementInspector.updateNodeInfo = function (node) {
       printWindow(winInfo.parent);
       var identity = elementInspector.getWindowIdentity(winInfo.id);
       var desc = "<li>Child win: "+identity.name+"</li>";
-      elementInspector.inspectorUI.subWindows.innerHTML += desc;
+      elementInspector.dom.subWindows.innerHTML += desc;
       if (!hasSidebar)
         hasSidebar = winInfo.id.match(/sidebar/);
       isOnlyTop = false;
@@ -187,14 +239,14 @@ elementInspector.updateNodeInfo = function (node) {
       
       printWindow(winInfo.parent);
       var desc = "<li>Unknown child win: "+winInfo.xpath+" </li>";
-      elementInspector.inspectorUI.subWindows.innerHTML += desc;
+      elementInspector.dom.subWindows.innerHTML += desc;
       isOnlyTop = false;
       
     } else if (winInfo.type=="tab") {
       
       printWindow(winInfo.top);
       var desc = "<li>Current firefox tab</li>";
-      elementInspector.inspectorUI.subWindows.innerHTML += desc;
+      elementInspector.dom.subWindows.innerHTML += desc;
       hasTab = true;
       isOnlyTop = false;
       
@@ -210,14 +262,14 @@ elementInspector.updateNodeInfo = function (node) {
       else if (winInfo.position.isLast)
         position = "bottommost";
       
-      elementInspector.inspectorUI.topWindow.position.value = position;
+      elementInspector.dom.topWindow.position.value = position;
       if (position=="nth") {
-        elementInspector.inspectorUI.topWindow.nth.value = winInfo.position.index;
-        elementInspector.inspectorUI.topWindow.nth.style.display = "";
+        elementInspector.dom.topWindow.nth.value = winInfo.position.index;
+        elementInspector.dom.topWindow.nth.style.display = "";
       } else {
-        elementInspector.inspectorUI.topWindow.nth.style.display = "none";
+        elementInspector.dom.topWindow.nth.style.display = "none";
       }
-      elementInspector.inspectorUI.topWindow.name.textContent = identity.name;
+      elementInspector.dom.topWindow.type.value = identity.id;
       
     } else if (winInfo.type=="top-unknown") {
       
@@ -227,14 +279,14 @@ elementInspector.updateNodeInfo = function (node) {
       if (winInfo.position.isLast)
         desc += " last";
       desc += " "+winInfo.position.index+"-nth";
-      elementInspector.inspectorUI.topWindow.nth.value = winInfo.position.index;
-      elementInspector.inspectorUI.topWindow.name.textContent = desc;
+      elementInspector.dom.topWindow.nth.value = winInfo.position.index;
+      elementInspector.dom.topWindow.type.value = "";
       
     }
     
   }
   
-  elementInspector.inspectorUI.subWindows.innerHTML = "";
+  elementInspector.dom.subWindows.innerHTML = "";
   var lastType = printWindow(this.getWindowInfo(node));
   
   var winType = isOnlyTop?"window":"sub-win";
@@ -248,22 +300,23 @@ elementInspector.updateNodeInfo = function (node) {
   else if (hasTab)
     winType = "sub-tab";
   
-  elementInspector.inspectorUI.topWindow.line.className = winType;
+  elementInspector.dom.topWindow.line.className = winType;
   
   
-  elementInspector.inspectorUI.element.textContent = info.xpath;
+  elementInspector.dom.element.xpath.value = info.xpath;
   
-  if (info.binding) {
-    elementInspector.inspectorUI.elementAnonymous.textContent = info.binding;
-    elementInspector.inspectorUI.elementAnonymous.style.display="";
+  if (info.anonymous) {
+    elementInspector.dom.anonymous.xpath.value = info.anonymous.join(', ');
+    elementInspector.dom.anonymous.line.style.display="";
   } else {
-    elementInspector.inspectorUI.elementAnonymous.style.display="none";
+    elementInspector.dom.anonymous.xpath.value = "";
+    elementInspector.dom.anonymous.line.style.display="none";
   }
   
-  elementInspector.inspectorUI.screenshot.style.display="";
-  elementInspector.inspectorUI.screenshot.src = info.preview.data;
-  elementInspector.inspectorUI.screenshot.setAttribute("width",info.preview.width);
-  elementInspector.inspectorUI.screenshot.setAttribute("height",info.preview.height);
+  elementInspector.dom.screenshot.style.display="";
+  elementInspector.dom.screenshot.src = info.preview.data;
+  elementInspector.dom.screenshot.setAttribute("width",info.preview.width);
+  elementInspector.dom.screenshot.setAttribute("height",info.preview.height);
   
 }
 
@@ -480,7 +533,7 @@ elementInspector.getWindowInfo = function (node) {
     if (winId) // Is a identified one!
       return { type:"sub-known", id : winId, parent : recurseOnWin(parentWindow) };
     // Try to check if this is a tab
-    if (topWindowId=="firefox-window") {
+    if (topWindowId=="firefox-window" && topWindow.wrappedJSObject && topWindow.wrappedJSObject.gBrowser) {
       try {
         var gBrowser = topWindow.wrappedJSObject.gBrowser;
         var tabIndex = gBrowser.getBrowserIndexForDocument(win.document);
@@ -509,7 +562,8 @@ elementInspector.getWindowInfo = function (node) {
     var iframes = parentWindow.document.getElementsByTagName("iframe");
     for(var i=0; i<iframes.length; i++) {
       var iframe=iframes[i];
-      Components.utils.reportError(iframe.contentWindow+" == "+win);
+      if (iframe.wrappedJSObject)
+        iframe = iframe.wrappedJSObject;
       if (iframe.contentWindow == win) {
         element = iframe;
         break;
@@ -519,7 +573,8 @@ elementInspector.getWindowInfo = function (node) {
       var iframes = parentWindow.document.getElementsByTagName("browser");
       for(var i=0; i<iframes.length; i++) {
         var iframe=iframes[i];
-        Components.utils.reportError(iframe.contentWindow+" == "+win);
+        if (iframe.wrappedJSObject)
+          iframe = iframe.wrappedJSObject;
         if (iframe.contentWindow == win) {
           element = iframe;
           break;

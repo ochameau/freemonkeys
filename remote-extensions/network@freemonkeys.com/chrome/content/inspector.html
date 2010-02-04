@@ -15,6 +15,15 @@ body {
   background-color: #ddd;
   padding: 10px;
 }
+#status {
+  text-align: center;
+  font-weight: bold;
+  font-size: 16px;
+}
+h1 {
+  margin: 0;
+  font-size: 15px;
+}
 #screenshot {
   text-align: center;
 }
@@ -47,24 +56,43 @@ body {
 #top-win-nth {
   width: 2em;
 }
+#element-xpath {
+  width: 300px;
+}
+#element-anonymous-xpath {
+  width: 220px;
+}
+#screenshot {
+  margin-top: 15px;
+}
 </style>
 </head>
 <body>
 
 
 <div id="rounded-top-box">
+<div id="status"></div>
+<h1>Window:</h1>
   <div id="top-window">
-    <select id="top-win-position">
-      <option value="topmost">Topmost</option>
-      <option value="nth">n-th</option>
-      <option value="bottommost">Bottommost</option>
-    </select>
-    <input id="top-win-nth" type="text" value="" style="display: none;" />
-    <span id="top-win-name"></span>
+    <div>
+      <select id="top-win-position">
+        <option value="topmost">Topmost</option>
+        <option value="nth">n-th</option>
+        <option value="bottommost">Bottommost</option>
+      </select>
+      <input id="top-win-nth" type="text" value="" style="display: none;" />
+      <select id="top-win-known">
+        <option value="">Unknown</option>
+      </select>
+    </div>
+    <div id="top-win-unknown">
+    </div>
   </div>
   <div id="sub-windows"></div>
-  <div id="element"></div>
-  <div id="element-anonymous"></div>
+<h1>Element:</h1>
+  <div id="element">XPath: <input id="element-xpath" type="text" value=""  /></div>
+  <div id="element-anonymous">Anonymous XPaths: <input id="element-anonymous-xpath" type="text" value="" /></div>
+
   <div id="screenshot"><img id="screenshot-img" src="" style="display:none" /></div>
 </div>
 
