@@ -141,7 +141,7 @@ body {
   background-repeat: no-repeat;
   background-position: 5px 0;
   font-weight: bold;
-  overflow-x: auto;
+  overflow: hidden;
 }
 
 #panel-edit #report-line[status="in-process"] {
@@ -185,6 +185,9 @@ body {
 }
 .CodeMirror-line-numbers .error {
   background-color: orange;
+}
+.CodeMirror-line-numbers .waiting {
+  background-color: #ddf;
 }
 .CodeMirror-line-numbers .message {
   background-color: #ddd;

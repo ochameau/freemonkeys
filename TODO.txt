@@ -17,6 +17,12 @@ no matter what .focus() function we call :/
 - network API better with async calls to listener but:
    - call may be mixed in time and appear in wrong order in report
    - unable to retrieve on first launch a macro reference
+- HTTP hook API to simulate response of any URL (ie generate dynamic local response for http://www.twitter.com/)
+- API to automatically set pref/settings IN JS source code (pref("need_restart",true);\n pref("default_timeout",10000); ... )
+- API to define multiple tests alternative in ONE test. (common code + at some place, multiple code which do the same "things")
+- execute only selection
+- move profile copy to a thread and display info messages
+
 
 #jetpack:
 - some directories in settings

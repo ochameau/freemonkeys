@@ -52,6 +52,15 @@ assert._assert = function (assert, args, callee) {
   ___listener.execAsync([assert?"assert-pass":"assert-fail",callee.caller.lineNumber+1,data]);
 }
 
+assert.fail = function fail(msg) {
+  var data = {
+    name: "fail",
+    args: msg
+  };
+  ___listener.execAsync(["error",Components.stack.caller.lineNumber+1,msg]);
+  throw new Error("stop");
+}
+
 assert.isTrue = function isTrue(v) {
   assert._assert((typeof v=="boolean" && v),[v]);
 }
@@ -66,4 +75,8 @@ assert.isEquals = function isEquals(a,b) {
 
 assert.isDefined = function isDefined(v) {
   assert._assert(v!=null,[v]);
+}
+
+assert.contains = function contains(content,str) {
+  assert._assert(content.indexOf(str)!=-1,[content,str]);
 }

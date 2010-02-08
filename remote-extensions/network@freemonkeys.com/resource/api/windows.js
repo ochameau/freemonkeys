@@ -141,11 +141,18 @@ try {
 
 windows.sub = function (parentWin, iframeXPath) {
 try {
-  var doc = parentWin.document;
-  var results = doc.evaluate(iframeXPath,doc,null,Components.interfaces.nsIDOMXPathResult.ANY_TYPE, null);
-  var iframe = results.iterateNext();
-  return new windows.MonkeyWindow(iframe.contentWindow);
+  return elements._waitForDefined(
+    function () {
+      var doc = parentWin.document;
+      var results = doc.evaluate(iframeXPath,doc,null,Components.interfaces.nsIDOMXPathResult.ANY_TYPE, null);
+      var iframe = results.iterateNext();
+      if (!iframe) return null;
+      return new windows.MonkeyWindow(iframe.contentWindow);
+    });
 } catch(e) {
-  ___api_exception(e);
+  if (e && e.message=="waitForDefined")
+    ___api_exception("Unable to found node with xpath:"+iframeXPath);
+  else
+    ___api_exception(e);
 }
 }

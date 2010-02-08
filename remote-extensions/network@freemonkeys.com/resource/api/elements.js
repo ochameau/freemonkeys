@@ -199,7 +199,7 @@ elements._waitForDefined = function(fun) {
             .getService()
             .currentThread;
   
-  while((typeof result=="undefined" || result==null) && new Date().getTime()-start < 2000) {
+  while((typeof result=="undefined" || result==null) && new Date().getTime()-start < 10000) {
     thread.processNextEvent(true);
   }
   
@@ -213,8 +213,9 @@ elements._waitForDefined = function(fun) {
     throw new Error("waitForDefined");
 }
 
-elements.xpath = function xpath(win, xpath) {
+elements.xpath = function xpath(win, xpath, notMandatory) {
   try {
+    ___api_waiting();
     var node = elements._waitForDefined(
       function () {
         var doc = win.document;
@@ -227,6 +228,8 @@ elements.xpath = function xpath(win, xpath) {
       });
     return new elements.MonkeyElement(node);
   } catch(e) {
+    if (notMandatory) 
+      return null;
     if (e && e.message=="waitForDefined")
       ___api_exception("Unable to found node with xpath:"+xpath);
     else
@@ -234,7 +237,7 @@ elements.xpath = function xpath(win, xpath) {
   }
 }
 
-elements.xblpath = function xblpath(win, xblpath) {
+elements.xblpath = function xblpath(win, xblpath, notMandatory) {
   try {
     var loader = Components.classes["@mozilla.org/moz/jssubscript-loader;1"]
                        .getService(Components.interfaces.mozIJSSubScriptLoader); 
@@ -332,6 +335,8 @@ elements.xblpath = function xblpath(win, xblpath) {
       });
     return new elements.MonkeyElement(node);
   } catch(e) {
+    if (notMandatory) 
+      return null;
     if (e && e.message=="waitForDefined")
       ___api_exception("Unable to found node with xpath:"+xblpath.join(", "));
     else
@@ -339,6 +344,6 @@ elements.xblpath = function xblpath(win, xblpath) {
   }
 }
 
-elements.selector = function selector(win, selector) {
+elements.selector = function selector(win, selector, notMandatory) {
   
 }

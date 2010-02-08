@@ -158,7 +158,10 @@ elementInspector._clickListener = function (event) {
   elementInspector.stopHighlighting();
   
   hiddenWindow.setTimeout(function () {
-    elementInspector.callback(elementInspector.getWindowInfo(elementInspector._currentOver), elementInspector.getNodeInfo(elementInspector._currentOver));
+    var winInfo = elementInspector.getWindowInfo(elementInspector._currentOver);
+    var nodeInfo = elementInspector.getNodeInfo(elementInspector._currentOver);
+    
+    elementInspector.callback(winInfo, nodeInfo);
   },100);
 }
 
@@ -321,16 +324,16 @@ elementInspector.updateNodeInfo = function (node) {
 }
 
 elementInspector.getXPath = function (elt,rootNode) {
-  function isUniqueId(doc,id) {
-    var results = doc.evaluate('id("'+id+'")',doc,null,Components.interfaces.nsIDOMXPathResult.ANY_TYPE, null);
+  function isUniqueId(doc,elt) {
+    var results = doc.evaluate('id("'+elt.id+'")',doc,null,Components.interfaces.nsIDOMXPathResult.ANY_TYPE, null);
     //alert(results.iterateNext()+" && "+results.iterateNext());
-    return results.iterateNext() && !results.iterateNext();
+    return elt==results.iterateNext() && !results.iterateNext();
   }
   
   var doc = elt.ownerDocument;
   
   // Try to ignore dynamic generated ids like panel201392193 in <tabbrowser> ...
-  if (elt.id && !elt.id.match(/\d{5,}/) &&  isUniqueId(doc,elt.id)) {
+  if (elt.id && !elt.id.match(/\d{5,}/) &&  isUniqueId(doc,elt)) {
     return ["id('"+elt.id+"')"];
   }
   

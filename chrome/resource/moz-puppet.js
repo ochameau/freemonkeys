@@ -71,7 +71,17 @@ var PuppetNetworkAPI = {
       //var uuid=newUUID();
       //localObjects[uuid]=obj;
       function clone(o) {
-        if (typeof o=="object") {
+        if (typeof o=="object" && o.push && o.pop && o.slice) {
+          var arrayDump = [];
+          for(var i=0; i<o.length; i++) {
+            try {
+              arrayDump.push(clone(o[i]));
+            } catch(e) {
+              dump("!!! Unable to read array's element : "+i+"\n");
+            }
+          }
+          return arrayDump;
+        } else if (typeof o=="object") {
           var objDump = {};
           for(var name in o) {
             var att=null;

@@ -60,6 +60,9 @@ try {
   
   garden.monkey = {};
   
+  garden.___api_waiting = function () {
+    listener.execAsync(["waiting",Components.stack.caller.caller.lineNumber+1,Components.stack.caller.name]);
+  }
   garden.___api_exception = function (exception) {
     listener.execAsync(["exception",Components.stack.caller.caller.lineNumber+1,Components.stack.caller.name+" : "+exception]);
   }
@@ -95,19 +98,21 @@ try {
   try {
     var result = Components.utils.evalInSandbox(code, garden, "1.8", "test-buffer", 0);
   } catch(e) {
-    // Try to find the related line in the test which ends to this exception
-    var line = -1;
-    if (e.location || (e.fileName && typeof e.lineNumber=="number")) {
-      var s=e.location || {filename:e.fileName,lineNumber:e.lineNumber};
-      while(s.filename!="test-buffer" && s.caller) {
-        Components.utils.reportError("stack : "+s);
-        s = s.caller;
+    if (e.message!="stop") {
+      // Try to find the related line in the test which ends to this exception
+      var line = -1;
+      if (e.location || (e.fileName && typeof e.lineNumber=="number")) {
+        var s=e.location || {filename:e.fileName,lineNumber:e.lineNumber};
+        while(s.filename!="test-buffer" && s.caller) {
+          Components.utils.reportError("stack : "+s);
+          s = s.caller;
+        }
+        if (s && s.filename=="test-buffer")
+          line = s.lineNumber+1;
       }
-      if (s && s.filename=="test-buffer")
-        line = s.lineNumber+1;
+      listener.execAsync(["exception",line,e.toString()]);
+      Components.utils.reportError("Test exception : \n"+e+"\n"+e.stack);
     }
-    listener.execAsync(["exception",line,e.toString()]);
-    Components.utils.reportError("Test exception : \n"+e+"\n"+e.stack);
   }
   listener.execAsync(["end",null,null]);
 } catch(e) {

@@ -127,6 +127,9 @@ gFreemonkeys._testsListener = function testsListener(type, line, data) {
         gFreemonkeys.reportLine.setAttribute("status","failed");
         gFreemonkeys.reportLine.innerHTML = "Error: "+data;
       }
+      gFreemonkeys.addLineTooltip(line,"fail",'Error at line '+line,data);
+    } else if (type=="waiting") {
+      gFreemonkeys.addLineTooltip(line,"waiting",'Waiting '+data,"");
     } else if (type=="debug") {
       gFMReport.print("debug","log",gFreemonkeys.getCurrentTestTime(),data);
       gFreemonkeys.addLineTooltip(line,"message",'Debug message at line '+line,'<pre class="message">'+data.replace("<","&lt;").replace(">","&gt;")+'</pre>');
