@@ -49,7 +49,31 @@ assert._assert = function (assert, args, callee) {
     args : argsData.join(", ")
   };
   
+  // Check stack trace, to see if a function contains "ThrowAsserts" 
+  // in its name, which means that this function want to disable assert report
+  // and throw them to it instead
+  var caller = callee;
+  var throwAssert = false;
+  do {
+    caller = caller.caller;
+    if (caller.name.match(/ThrowAsserts/)) {
+      throwAssert=true;
+      break;
+    }
+  } while(caller);
+  
+  if (throwAssert) {
+    if (!assert) {
+      throw {
+        assert: true,
+        data: data,
+        line: callee.caller.lineNumber+1
+      };
+    }
+  }
+  
   ___listener.execAsync([assert?"assert-pass":"assert-fail",callee.caller.lineNumber+1,data]);
+  
 }
 
 assert.fail = function fail(msg) {

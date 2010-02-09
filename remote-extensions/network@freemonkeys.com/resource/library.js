@@ -72,10 +72,10 @@ try {
   garden.___listener = listener;
   
   // Some usefull functions in global context
-  garden.setInterval = function (f,t) {hiddenWindow.setInterval(f,t)};
+  garden.setInterval = function (f,t) {return hiddenWindow.setInterval(f,t)};
   garden.clearInterval = function (t) {hiddenWindow.clearInterval(t)};
-  garden.setTimeout = function (f,t) {hiddenWindow.setTimeout(f,t)};
-  garden.setTimeout = function (t) {hiddenWindow.clearTimeout(t)};
+  garden.setTimeout = function (f,t) {return hiddenWindow.setTimeout(f,t)};
+  garden.clearTimeout = function (t) {hiddenWindow.clearTimeout(t)};
   
   garden.windows = {};
   loader.loadSubScript("resource://fm-network/api/windows.js", garden);

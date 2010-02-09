@@ -42,8 +42,10 @@ wait._assert = function (fun, args) {
   var exception = null;
   var argsValues = [];
   
-  function wait() {
+  function executeOnce_ThrowAsserts() {
+    exception = null;
     try {
+      if (result) return;
       argsValues = [];
       for(var i=0; i<args.length; i++) {
         if (typeof args[i]=="function")
@@ -52,12 +54,16 @@ wait._assert = function (fun, args) {
           argsValues[i] = args[i];
       }
       result = fun.apply(null,argsValues);
+      if (result) {
+        clearInterval(timeoutInterval);
+        timeoutInterval = null;
+      }
     } catch(e) {
       exception = e;
     }
   }
   
-  var timeoutInterval = setInterval(wait, 100);
+  var timeoutInterval = setInterval(executeOnce_ThrowAsserts, 100);
   
   var thread = Components.classes["@mozilla.org/thread-manager;1"]
             .getService()
@@ -67,10 +73,11 @@ wait._assert = function (fun, args) {
     thread.processNextEvent(true);
   }
   
-  clearInterval(timeoutInterval);
+  if (timeoutInterval)
+    clearInterval(timeoutInterval);
   
   if (exception)
-    throw new Error(exception.message?exception.message:exception);
+    throw exception;
   
   var success = typeof result=="boolean" && result===true;
   
@@ -89,8 +96,22 @@ wait.setTimeout = function (f,t) {
   return hiddenWindow.setTimeout(f,t?t:2000);
 }
 
-wait.waitForSuccess = function waitForSuccess(fun) {
-  
+// Wait for an anonymous function passed in
+// to correctly pass all asserts called within!
+wait.forSuccess = function forSuccess(fun) {
+  try {
+    wait._assert(function (a) {
+      return true;
+    },[fun]);
+    ___listener.execAsync(["assert-pass",Components.stack.caller.lineNumber+1,{name:"forSuccess",args:""}]);
+  } catch(e) {
+    if (e.assert) {
+      ___listener.execAsync(["assert-fail",e.line,e.data]);
+      ___listener.execAsync(["assert-fail",Components.stack.caller.lineNumber+1,{name:"forSuccess",args:""}]);
+    } else {
+      ___api_exception(e);
+    }
+  }
 }
 
 wait.during = function wait(ms) {
@@ -112,15 +133,14 @@ wait.forTrue = function forTrue(v) {
 }
 
 wait.forFalse = function forFalse(v) {
-  
   wait._assert(function (a) {
-    return (typeof v=="boolean" && !v)
+    return (typeof a=="boolean" && !a)
   },[v]);
 }
 
 wait.forEquals = function forEquals(a,b) {
-  wait._assert(function (a,b) {
-    return a===b;
+  wait._assert(function (x,y) {
+    return x===y;
   },[a,b]);
 }
 
