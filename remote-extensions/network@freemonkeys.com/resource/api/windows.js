@@ -114,34 +114,40 @@ windows.getByZindex = function (id, type, name, location, position) {
 
 windows.getRegistered = function (id, position) {
 try {
-  var info = null;
-  for(var i=0; i<knownTopWindows.length; i++) {
-    var w = knownTopWindows[i];
-    if (w.id == id) {
-      info = w; break;
-    }
-  }
-  if (!info) throw new Error("Unknown window id : "+id);
-  var list = windows.getList(info.params.id, info.params.type, info.params.name, info.params.location, windows.ORDER_BY_ZORDER);
-  var win = null;
-  if (position=="bottommost")
-    win = list[0];
-  else if (typeof position=="number")
-    win = list[position];
-  else {
-    position = "topmost";
-    win = list[list.length-1];
-  }
-  if (!win) throw new Error("No such window at position: "+position);
-  return win;
+  return wait._forDefined(
+    function() {
+      var info = null;
+      for(var i=0; i<knownTopWindows.length; i++) {
+        var w = knownTopWindows[i];
+        if (w.id == id) {
+          info = w; break;
+        }
+      }
+      if (!info) throw new Error("Unknown window id : "+id);
+      var list = windows.getList(info.params.id, info.params.type, info.params.name, info.params.location, windows.ORDER_BY_ZORDER);
+      var win = null;
+      if (position=="bottommost")
+        win = list[0];
+      else if (typeof position=="number")
+        win = list[position];
+      else {
+        position = "topmost";
+        win = list[list.length-1];
+      }
+      if (!win) throw new Error("No such window at position: "+position);
+      return win;
+    });
 } catch(e) {
-  ___api_exception(e);
+  if (e && e.message=="waitForDefined")
+    ___api_exception("Unable to found node with xpath:"+iframeXPath);
+  else
+    ___api_exception(e);
 }
 }
 
 windows.sub = function (parentWin, iframeXPath) {
 try {
-  return elements._waitForDefined(
+  return wait._forDefined(
     function () {
       var doc = parentWin.document;
       var results = doc.evaluate(iframeXPath,doc,null,Components.interfaces.nsIDOMXPathResult.ANY_TYPE, null);

@@ -1,5 +1,40 @@
 var wait = {};
 
+// Internal API, used to wait, doesn't display error.
+wait._forDefined = function(fun) {
+  var start = new Date().getTime();
+  
+  var result;
+  var exception = null;
+  
+  function wait() {
+    try {
+      result = fun();
+    } catch(e) {
+      exception = e;
+    }
+  }
+  
+  var timeoutInterval = setInterval(wait, 100);
+  
+  var thread = Components.classes["@mozilla.org/thread-manager;1"]
+            .getService()
+            .currentThread;
+  
+  while((typeof result=="undefined" || result==null) && new Date().getTime()-start < 10000) {
+    thread.processNextEvent(true);
+  }
+  
+  clearInterval(timeoutInterval);
+  
+  if (typeof result!="undefined" && result!=null)
+    return result;
+  if (exception)
+    throw new Error(exception.message?exception.message:exception);
+  else
+    throw new Error("waitForDefined");
+}
+
 wait._assert = function (fun, args) {
   var start = new Date().getTime();
   

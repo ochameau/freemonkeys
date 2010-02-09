@@ -16,12 +16,30 @@ elements.MonkeyElement =
       // xul case
       if (!boxobject)
         boxobject=elt.boxObject;
+      var win = elt.ownerDocument.defaultView;
+      if (!boxobject && elt.getBoundingClientRect && 'mozInnerScreenX' in win/* && 'mozScreenPixelsPerCSSPixel' in win*/) {
+        // Firefox 3.6+
+        var rect = elt.getBoundingClientRect();
+        var domWindowUtils = win.QueryInterface(Components.interfaces.nsIInterfaceRequestor)
+                                     .getInterface(Components.interfaces.nsIDOMWindowUtils);
+        var zoom = domWindowUtils.screenPixelsPerCSSPixel;
+        //Components.utils.reportError(rect.top*zoom+" + "+win.mozInnerScreenY*zoom);
+        return {
+          width: rect.right-rect.left,
+          height: rect.bottom-rect.top,
+          x: rect.left,
+          screenX: rect.left*zoom + win.mozInnerScreenX*zoom,
+          y: rect.top,
+          screenY: rect.top*zoom + win.mozInnerScreenY*zoom
+          
+        }
+      }
       // problem case
       if (!boxobject) {
         dump("unable to get easily boxobject : "+elt.tagName);
-        var docshell = elt.QueryInterface(Ci.nsIInterfaceRequestor)
-                             .getInterface(Ci.nsIWebNavigation)
-                             .QueryInterface(Ci.nsIDocShell);
+        var docshell = elt.QueryInterface(Components.interfaces.nsIInterfaceRequestor)
+                             .getInterface(Components.interfaces.nsIWebNavigation)
+                             .QueryInterface(Components.interfaces.nsIDocShell);
         if (!docshell.chromeEventHandler)
           inspect(docshell);
         var boxobject = docshell.chromeEventHandler.boxObject;
@@ -179,44 +197,12 @@ elements.MonkeyElement =
     }
   }
 
-elements._waitForDefined = function(fun) {
-  var start = new Date().getTime();
-  
-  var result;
-  var exception = null;
-  
-  function wait() {
-    try {
-      result = fun();
-    } catch(e) {
-      exception = e;
-    }
-  }
-  
-  var timeoutInterval = setInterval(wait, 100);
-  
-  var thread = Components.classes["@mozilla.org/thread-manager;1"]
-            .getService()
-            .currentThread;
-  
-  while((typeof result=="undefined" || result==null) && new Date().getTime()-start < 10000) {
-    thread.processNextEvent(true);
-  }
-  
-  clearInterval(timeoutInterval);
-  
-  if (typeof result!="undefined" && result!=null)
-    return result;
-  if (exception)
-    throw new Error(exception.message?exception.message:exception);
-  else
-    throw new Error("waitForDefined");
-}
+
 
 elements.xpath = function xpath(win, xpath, notMandatory) {
   try {
     ___api_waiting();
-    var node = elements._waitForDefined(
+    var node = wait._forDefined(
       function () {
         var doc = win.document;
         if (!doc) return;
@@ -243,7 +229,7 @@ elements.xblpath = function xblpath(win, xblpath, notMandatory) {
                        .getService(Components.interfaces.mozIJSSubScriptLoader); 
     var xpathJSLib = null;
     var onlyOne = false;
-    var node = elements._waitForDefined(
+    var node = wait._forDefined(
       function () {
         var doc = win.document;
         if (!doc) return;
