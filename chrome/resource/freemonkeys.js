@@ -148,8 +148,9 @@ FreemonkeysZoo.free = function (application, profilePath) {
   }
 }
 
-FreemonkeysZoo.selectNode = function (application, profile, onClick) {
-  var monkey = FreemonkeysZoo._pens[application]?FreemonkeysZoo._pens[application][profile]:null;
+FreemonkeysZoo.selectNode = function (application, profilePath, onClick) {
+  var profileKey = !profilePath ? "empty" : profilePath;
+  var monkey = FreemonkeysZoo._pens[application]?FreemonkeysZoo._pens[application][profileKey]:null;
   if (!monkey || !monkey.puppet.isAlive()) return false;
   monkey.asyncMacro.execObjectFunction(
       "selectNode",

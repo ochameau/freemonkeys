@@ -386,12 +386,30 @@ elementInspector.getNodeInfo = function (node, dontGetPreview) {
     // xul case
     if (!boxobject)
       boxobject=elt.boxObject;
+    var win = elt.ownerDocument.defaultView;
+    if (!boxobject && elt.getBoundingClientRect && 'mozInnerScreenX' in win/* && 'mozScreenPixelsPerCSSPixel' in win*/) {
+      // Firefox 3.6+
+      var rect = elt.getBoundingClientRect();
+      var domWindowUtils = win.QueryInterface(Components.interfaces.nsIInterfaceRequestor)
+                                   .getInterface(Components.interfaces.nsIDOMWindowUtils);
+      var zoom = domWindowUtils.screenPixelsPerCSSPixel;
+      //Components.utils.reportError(rect.top*zoom+" + "+win.mozInnerScreenY*zoom);
+      return {
+        width: rect.right-rect.left,
+        height: rect.bottom-rect.top,
+        x: rect.left,
+        screenX: rect.left*zoom + win.mozInnerScreenX*zoom,
+        y: rect.top,
+        screenY: rect.top*zoom + win.mozInnerScreenY*zoom
+        
+      }
+    }
     // problem case
     if (!boxobject) {
       dump("unable to get easily boxobject : "+elt.tagName);
-      var docshell = elt.QueryInterface(Ci.nsIInterfaceRequestor)
-                           .getInterface(Ci.nsIWebNavigation)
-                           .QueryInterface(Ci.nsIDocShell);
+      var docshell = elt.QueryInterface(Components.interfaces.nsIInterfaceRequestor)
+                           .getInterface(Components.interfaces.nsIWebNavigation)
+                           .QueryInterface(Components.interfaces.nsIDocShell);
       if (!docshell.chromeEventHandler)
         inspect(docshell);
       var boxobject = docshell.chromeEventHandler.boxObject;
