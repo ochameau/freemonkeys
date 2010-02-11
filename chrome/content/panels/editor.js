@@ -84,6 +84,10 @@ gFMEditor.cleanLinesStates = function () {
 gFMEditor.setLineClass = function (line, classname) {
   var lineElement = this.getLineElementFor(line);
   lineElement.className=classname;
+  
+  var current = gFMEditor.editor.nthLine(line);
+  var next= gFMEditor.editor.nextLine(current);
+  gFMEditor.editor.selectLines(current, 0, next, 0);
 }
 
 // Line start at 1
