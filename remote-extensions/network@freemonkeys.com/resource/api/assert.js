@@ -56,7 +56,7 @@ assert._assert = function (assert, args, callee) {
   var throwAssert = false;
   do {
     caller = caller.caller;
-    if (caller.name.match(/ThrowAsserts/)) {
+    if (caller && caller.name && caller.name.match(/ThrowAsserts/)) {
       throwAssert=true;
       break;
     }

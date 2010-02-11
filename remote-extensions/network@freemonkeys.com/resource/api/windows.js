@@ -10,6 +10,9 @@ windows.MonkeyTab =
     this.__defineGetter__("document", function () {
       return linkedBrowser.contentDocument;
     });
+    this.__defineGetter__("window", function () {
+      return linkedBrowser.contentWindow;
+    });
     this.open = function (url) {
       linkedBrowser.loadURI(url,null,null);
     }
@@ -27,17 +30,16 @@ windows.MonkeyTab =
     this.reload = function () {
       webNavigation.reload(webNavigation.LOAD_FLAGS_BYPASS_PROXY | webNavigation.LOAD_FLAGS_BYPASS_CACHE);
     }
-    this.getInternal = function () {
-      return tab;
-    }
   };
 
 windows.MonkeyWindow = 
   function MonkeyWindow(win) {
-    this.win = win;
     var gBrowser = win.gBrowser;
     this.__defineGetter__("document", function () {
       return win.document;
+    });
+    this.__defineGetter__("window", function () {
+      return win;
     });
     this.tabs = {
       new : function (url, doNotSelect) {
@@ -65,9 +67,6 @@ windows.MonkeyWindow =
     }
     this.close = function () {
       win.close();
-    }
-    this.getInternal = function () {
-      return win;
     }
   };
 

@@ -8,7 +8,7 @@ function inspect(obj) {
   var wm = Components.classes["@mozilla.org/appshell/window-mediator;1"].getService(Components.interfaces.nsIWindowMediator);
   var win = wm.getMostRecentWindow("navigator:browser");
   if (!win.inspectObject)
-    return alert("You must install DOM Inspector!");
+    return Components.utils.reportError("You must install DOM Inspector!");
   win.inspectObject(obj);
 }
 
