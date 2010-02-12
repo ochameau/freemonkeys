@@ -77,10 +77,14 @@ windows.ORDER_BY_CREATION_DATE = "by_date";
 windows.getList = function (id, type, name, location, order) {
   var list = [];
   
+  var xulRuntime = Components.classes["@mozilla.org/xre/app-info;1"]
+                           .getService(Components.interfaces.nsIXULRuntime);
   var wm = Components.classes["@mozilla.org/appshell/window-mediator;1"]
                    .getService(Components.interfaces.nsIWindowMediator);
   var enumerator;
-  if (order==windows.ORDER_BY_CREATION_DATE)
+  // getZOrderXULWindowEnumerator doesn't seems to work on linux ? 
+  //  https://bugzilla.mozilla.org/show_bug.cgi?id=156333 
+  if (order==windows.ORDER_BY_CREATION_DATE || xulRuntime.OS=="Linux")
     enumerator = wm.getXULWindowEnumerator(type?type:null);
   else
     enumerator = wm.getZOrderXULWindowEnumerator(type?type:null,false);

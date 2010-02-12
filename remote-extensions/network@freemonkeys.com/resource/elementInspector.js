@@ -172,10 +172,12 @@ elementInspector._clickListener = function (event) {
   
   elementInspector.stopHighlighting();
   
+  var winInfo, nodeInfo; // Set these vars not locals as we get strange errors on linux "uncaucht exception, can't convert to string ?!"
   hiddenWindow.setTimeout(function () {
-    var winInfo = elementInspector.getWindowInfo(elementInspector._currentOver);
-    var nodeInfo = elementInspector.getNodeInfo(elementInspector._currentOver);
-    
+    winInfo = elementInspector.getWindowInfo(elementInspector._currentOver);
+    nodeInfo = elementInspector.getNodeInfo(elementInspector._currentOver);
+    //Components.utils.reportError("win:"+winInfo.toSource());
+    //Components.utils.reportError("node:"+nodeInfo.toSource());
     elementInspector.callback(winInfo, nodeInfo);
   },100);
 }
