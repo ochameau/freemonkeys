@@ -107,8 +107,6 @@ gFMPrefs.selectProfile = function () {
   var nsIFilePicker = Components.interfaces.nsIFilePicker;
   var fp = Components.classes["@mozilla.org/filepicker;1"].createInstance(nsIFilePicker);
   fp.init(window, "Profile folder", nsIFilePicker.modeGetFolder);
-  //fp.appendFilter("Freemonkey Test set Files","*.fmt");
-  //fp.appendFilters(nsIFilePicker.filterAll);
   
   var rv = fp.show();
   if (rv == nsIFilePicker.returnOK) {
@@ -122,7 +120,7 @@ gFMPrefs.selectApplication = function () {
   var nsIFilePicker = Components.interfaces.nsIFilePicker;
   var fp = Components.classes["@mozilla.org/filepicker;1"].createInstance(nsIFilePicker);
   fp.init(window, "Application binary", nsIFilePicker.modeOpen);
-  fp.appendFilter("Application binary","*.exe");
+  fp.appendFilters(nsIFilePicker.filterApps);
   fp.appendFilters(nsIFilePicker.filterAll);
   
   var rv = fp.show();
