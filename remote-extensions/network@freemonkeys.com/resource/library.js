@@ -4,12 +4,14 @@ var hiddenWindow = Components.classes["@mozilla.org/appshell/appShellService;1"]
          .getService(Components.interfaces.nsIAppShellService)
          .hiddenDOMWindow;
 
-function inspect(obj) {
-  var wm = Components.classes["@mozilla.org/appshell/window-mediator;1"].getService(Components.interfaces.nsIWindowMediator);
-  var win = wm.getMostRecentWindow("navigator:browser");
-  if (!win.inspectObject)
-    return Components.utils.reportError("You must install DOM Inspector!");
-  win.inspectObject(obj);
+function inspect(aObject, aModal) {
+  if (aObject && typeof aObject.appendChild=="function") {
+    hiddenWindow.openDialog("chrome://inspector/content/", "_blank",
+              "chrome,all,dialog=no"+(aModal?",modal":""), aObject);
+  } else {
+    hiddenWindow.openDialog("chrome://inspector/content/object.xul", "_blank",
+              "chrome,all,dialog=no"+(aModal?",modal":""), aObject);
+  }
 }
 
 Components.utils.import("resource://fm-network/moz-puppet.js");

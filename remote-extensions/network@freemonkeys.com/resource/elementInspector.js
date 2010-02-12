@@ -14,6 +14,14 @@ const hiddenWindow = Components.classes["@mozilla.org/appshell/appShellService;1
          .getService(Components.interfaces.nsIAppShellService)
          .hiddenDOMWindow;
 
+const appInfo = Components.classes["@mozilla.org/xre/app-info;1"]
+                        .getService(Components.interfaces.nsIXULAppInfo);
+const versionChecker = Components.classes["@mozilla.org/xpcom/version-comparator;1"]
+                               .getService(Components.interfaces.nsIVersionComparator);
+const xulRuntime = Components.classes["@mozilla.org/xre/app-info;1"]
+                           .getService(Components.interfaces.nsIXULRuntime);
+
+
 const elementInspector = {};
 
 elementInspector.paused = false;
@@ -26,7 +34,11 @@ elementInspector.startHighlighting = function (callback) {
   this.stopHighlighting();
   
   var ww = Components.classes["@mozilla.org/embedcomp/window-watcher;1"].getService(Components.interfaces.nsIWindowWatcher);
-  var url = "chrome://fm-network/content/transparent-window.xul";
+  var url = "chrome://fm-network/content/inspector.html";
+  if ( versionChecker.compare(appInfo.platformVersion, "1.9.1") >= 0 
+             && xulRuntime.OS=="WINNT" ) {
+    url = "chrome://fm-network/content/transparent-window.xul";
+  } 
   //url = "data:text/html;charset=utf-8,";
   this.win = ww.openWindow(
                 null, // parent
@@ -55,11 +67,14 @@ elementInspector.startHighlighting = function (callback) {
 elementInspector.onPopupLoad = function () {
   
   var iframe = this.win.document.getElementById("iframe");
-  
-  var doc = iframe.contentDocument;
+  var doc = this.win.document;
+  if (iframe)
+    doc = iframe.contentDocument;
+  else
+    doc.documentElement.className += " opaque";
   
   elementInspector.dom = {
-    win: iframe.contentWindow,
+    win: iframe?iframe.contentWindow:this.win,
     doc: doc,
     status: doc.getElementById('status'),
     topWindow: {
@@ -84,7 +99,7 @@ elementInspector.onPopupLoad = function () {
   this.fillWindowsType();
   
   hiddenWindow.setTimeout(function () {
-    var width = 400; var height = 200;
+    var width = 400; var height = 350;
     elementInspector.win.resizeTo(width, height);
     elementInspector.win.moveTo(hiddenWindow.screen.availWidth-width-20,hiddenWindow.screen.availHeight-height-20);
   }, 1000);
@@ -193,7 +208,8 @@ elementInspector.highlightNode = function (node) {
 }
 
 elementInspector.unhighlightNode = function (node) {
-  node.style.removeProperty("border");
+  if (node && node.style)
+    node.style.removeProperty("border");
 }
 
 elementInspector.identifyWindow = function (win) {

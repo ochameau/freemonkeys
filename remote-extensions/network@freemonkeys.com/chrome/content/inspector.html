@@ -4,8 +4,6 @@
 <style>
 body {
   background-color: transparent;
-  max-width: 400px;
-  max-height: 300px;
   overflow: hidden;
 }
 #rounded-top-box {
@@ -15,10 +13,20 @@ body {
   background-color: #ddd;
   padding: 10px;
 }
+html.opaque body {
+  background-color: #ddd;
+  margin: 0; padding: 0;
+}
+html.opaque #rounded-top-box {
+  border: 0;
+  -moz-border-radius: 0;
+  -moz-box-shadow: none;
+}
 #status {
   text-align: center;
   font-weight: bold;
   font-size: 16px;
+  margin-bottom: 10px;
 }
 h1 {
   margin: 0;
@@ -28,7 +36,9 @@ h1 {
   text-align: center;
 }
 #screenshot-img {
-  max-width:350px; max-height: 150px;border: 1px solid #ddd; -moz-box-shadow:0 0 10px #000; 
+  max-width:350px; max-height: 150px;
+  width: auto; height: auto;
+  border: 1px solid #ddd; -moz-box-shadow:0 0 10px #000; 
 }
 #top-window {
   padding-left: 24px;

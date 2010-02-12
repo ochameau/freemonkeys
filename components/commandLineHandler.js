@@ -81,7 +81,6 @@ const myAppHandler = {
       } else {
         dump("With GUI\n");
         var winURL = "chrome://freemonkeys/content/freemonkeys.html";
-        Components.utils.reportError(appInfo.platformVersion);
         // Enable transparent windows only on Windows with Xulrunner equivalent to ff3.6+
         if ( versionChecker.compare(appInfo.platformVersion, "1.9.2") >= 0 
              && xulRuntime.OS=="WINNT" ) {
