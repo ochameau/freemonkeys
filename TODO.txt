@@ -20,7 +20,8 @@ no matter what .focus() function we call :/
 - HTTP hook API to simulate response of any URL (ie generate dynamic local response for http://www.twitter.com/)
 - API to automatically set pref/settings IN JS source code (pref("need_restart",true);\n pref("default_timeout",10000); ... )
 - API to define multiple tests alternative in ONE test. (common code + at some place, multiple code which do the same "things")
-- execute only selection
+- execute only selection, or up to the selection: do a selection action button 
+and insert dynamically stop button in it or beside it (if a session is alive).
 - move profile copy to a thread and display info messages
 
 

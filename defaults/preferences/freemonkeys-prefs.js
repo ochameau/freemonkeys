@@ -1,6 +1,6 @@
 //pref("toolkit.defaultChromeURI", "chrome://freemonkeys/content/freemonkeys.html");
-pref("toolkit.defaultChromeURI", "chrome://freemonkeys/content/transparent-window.xul");
-pref("toolkit.defaultChromeFeatures", "chrome,dialog=yes,titlebar=no");
+//pref("toolkit.defaultChromeURI", "chrome://freemonkeys/content/transparent-window.xul");
+//pref("toolkit.defaultChromeFeatures", "chrome,dialog=yes,titlebar=no");
 
 // Debug preferences
 // see http://developer.mozilla.org/en/docs/Debugging_a_XULRunner_Application

@@ -12,7 +12,14 @@ const nsIWindowWatcher      = Components.interfaces.nsIWindowWatcher;
 const appStartup = Components.classes['@mozilla.org/toolkit/app-startup;1'].
     getService(Components.interfaces.nsIAppStartup);
 
+const appInfo = Components.classes["@mozilla.org/xre/app-info;1"]
+                        .getService(Components.interfaces.nsIXULAppInfo);
+const versionChecker = Components.classes["@mozilla.org/xpcom/version-comparator;1"]
+                               .getService(Components.interfaces.nsIVersionComparator);
+const xulRuntime = Components.classes["@mozilla.org/xre/app-info;1"]
+                           .getService(Components.interfaces.nsIXULRuntime);
 
+                           
 const clh_contractID = "@mozilla.org/commandlinehandler/general-startup;1?type=m-xul-macro";
 
 const clh_CID = Components.ID("{2991c315-b871-42cd-b33f-bfee4fcbf682}");
@@ -62,6 +69,30 @@ const myAppHandler = {
   handle : function clh_handle(cmdLine)
   {
     //var command = cmdLine.handleFlagWithParam("command", false);
+    
+    try {
+      if (cmdLine.handleFlag("nogui", false)) {
+        dump("NO GUI!\n");
+        appStartup.enterLastWindowClosingSurvivalArea();
+        window.setTimeout(function () {
+          
+          appStartup.exitLastWindowClosingSurvivalArea();
+        },2000);
+      } else {
+        dump("With GUI\n");
+        var winURL = "chrome://freemonkeys/content/freemonkeys.html";
+        Components.utils.reportError(appInfo.platformVersion);
+        // Enable transparent windows only on Windows with Xulrunner equivalent to ff3.6+
+        if ( versionChecker.compare(appInfo.platformVersion, "1.9.2") >= 0 
+             && xulRuntime.OS=="WINNT" ) {
+          winURL = "chrome://freemonkeys/content/transparent-window.xul";
+        }
+        openWindow(winURL,null);
+        
+      }
+    } catch(e) {
+      dump("Cmd line error : "+e+"\n");
+    }
     
   },
 
