@@ -1,0 +1,28 @@
+
+FREEMONKEYS
+
+Graphical unit tests editor/executer which enables you to spellcast an army of monkeys always happy to work hard on your projects and find bugs for free!
+
+Here is what they can do:
+
+* Launch any Mozilla application: Firefox, Thunderbird and any xulrunner app,
+* Use an empty profile for each test execution, or an existing one,
+* Speak fluently "assert" language: isTrue, isFalse, isDefined, equals, ... etc,
+* Report you in real time test execution directly in your test source code,
+* They are always ready to work. You don't need to restart Freemonkeys on each test execution, nor on your application reboot. Freemonkeys is an independant xulrunner app, which launch yours and then controls it remotly with a network connexion,
+* Spot easily any window, any tab and any DOM element with usefull distinctive parameters: XPath, windows attributes, zIndex order, ... etc,
+* Offer a way to facilitate node identification by simply clicking on it, and seeing in real time what are selected node parameters,
+* They are able to write down some debug messages, inspect javascript objects with DOM Inspector, take screenshots of any elements,
+* Ease you some kind of tests, by providing you a simple HTTP webserver in order to simulate some websites answers,
+* They are not narrow-minded to synchronous tests but offers an assert library and some usefull API embracing asynchronous execution of your code!
+
+
+Platform independant packages are waiting for you here:
+http://github.com/ochameau/freemonkeys/downloads
+
+There is "ready to launch" packages for windows: freemonkeys-xxx-win.zip
+You can simply extract the archive and launch freemonkeys.exe.
+
+
+More information available here:
+http://blog.techno-barje.fr/post/2010/02/12/Freemonkeys
