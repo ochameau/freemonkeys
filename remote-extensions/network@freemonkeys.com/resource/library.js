@@ -54,8 +54,9 @@ try {
   } catch(e) {}
   
   listener.execAsync(["start",null,null]);
-  var garden = Components.utils.Sandbox(this.__parent__);//"http://localhost.localdomain.:0/");
-  garden.__proto__ = this.__parent__.wrappedJSObject?this.__parent__.wrappedJSObject:this.__parent__;
+  var parent = this.__parent__?this.__parent__:Components.utils.getGlobalForObject(this);
+  var garden = Components.utils.Sandbox(parent);//"http://localhost.localdomain.:0/");
+  garden.__proto__ = parent.wrappedJSObject?parent.wrappedJSObject:parent;
   
   var loader = Components.classes["@mozilla.org/moz/jssubscript-loader;1"]
                        .getService(Components.interfaces.mozIJSSubScriptLoader); 

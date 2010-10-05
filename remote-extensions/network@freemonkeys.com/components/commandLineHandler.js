@@ -29,7 +29,13 @@ const clh_category = "m-freemonkeys-network";
  * The XPCOM component that implements nsICommandLineHandler.
  * It also implements nsIFactory to serve as its own singleton factory.
  */
-const myAppHandler = {
+function myComponent() {
+}
+myComponent.prototype = {
+  // this must match whatever is in chrome.manifest!
+  classID: Components.ID("{2991c315-b871-42cd-b33f-bfee4fcbf682}"),
+
+
   /* nsISupports */
   QueryInterface : function clh_QI(iid)
   {
@@ -56,6 +62,7 @@ const myAppHandler = {
       port = 9000;
     
     Components.utils.import("resource://fm-network/server.js");
+    Components.utils.reportError("Starting freemonkey server on port : "+port+"\n");
     dump("Starting freemonkey server on port : "+port+"\n");
     this.server = startFreemonkeyServer(port);
     
@@ -104,7 +111,7 @@ const myAppHandlerModule = {
   getClassObject : function mod_gch(compMgr, cid, iid)
   {
     if (cid.equals(clh_CID))
-      return myAppHandler.QueryInterface(iid);
+      return myComponent.prototype.QueryInterface(iid);
 
     throw Components.results.NS_ERROR_NOT_REGISTERED;
   },
@@ -143,10 +150,16 @@ const myAppHandlerModule = {
   }
 };
 
-/* The NSGetModule function is the magic entry point that XPCOM uses to find what XPCOM objects
- * this component provides
- */
-function NSGetModule(comMgr, fileSpec)
-{
-  return myAppHandlerModule;
+try {
+  Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
+  var NSGetFactory = XPCOMUtils.generateNSGetFactory([myComponent]);
+} catch(e) {
+  /* The NSGetModule function is the magic entry point that XPCOM uses to find what XPCOM objects
+   * this component provides
+   */
+  function NSGetModule(comMgr, fileSpec)
+  {
+    return myAppHandlerModule;
+  }
 }
+  
